@@ -1,7 +1,5 @@
 import mqtt, { MqttClient } from 'mqtt';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { env } from "./environment.ts";
 
 let mqttInstance: MqttClient | null = null;
 
@@ -11,10 +9,10 @@ export function getMqttClient(): Promise<MqttClient> {
 
   return new Promise((resolve, reject) => {
     const client = mqtt.connect(
-      `wss://${process.env.MQTT_HOST}:8884/mqtt`,
+      `wss://${env.MQTT_HOST}:8884/mqtt`,
       {
-        username: process.env.MQTT_USER,
-        password: process.env.MQTT_PASSWORD,
+        username: env.MQTT_USER,
+        password: env.MQTT_PASSWORD,
         clientId: `webuser-${Date.now()}`,
       },
     );
