@@ -9,7 +9,7 @@ import { api } from "@/api";
 
 type Message = {
   senderId: string;
-  message: string;
+  content: string;
   recipientId: string;
 };
 
@@ -20,18 +20,18 @@ async function postMessage(message: Message) {
 
 function MessageForm() {
   const [recipientId, setRecipientId] = useState<"tomi" | "rochi">("tomi");
-  const [message, setMessage] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
   const clearForm = () => {
-    setMessage("");
+    setContent("");
   };
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     setLoading(true);
     e.preventDefault();
     //TODO: make screen to select senderId
-    await postMessage({ senderId: "tomi", message, recipientId });
+    await postMessage({ senderId: "tomi", content, recipientId });
     clearForm();
     setLoading(false);
   };
@@ -48,9 +48,9 @@ function MessageForm() {
                 id="mensaje"
                 type="text"
                 placeholder="Escribí un mensaje..."
-                value={message}
+                value={content}
                 required
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => setContent(e.target.value)}
               />
             </div>
           </div>
