@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { sql } from "./config/sql";
+import { sql } from "../config/sql";
 
 export async function getInbox(recipientId: string) {
   const result = await sql.query(

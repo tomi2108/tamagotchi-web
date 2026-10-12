@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getMqttClient } from "./mqtt.js";
+import { getMqttClient } from "./config/mqtt";
 import { sql } from "./config/sql";
 
 type Message = {
+  senderId: string;
   message: string;
   topic: string;
 };
