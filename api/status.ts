@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDeviceStatuses, setDeviceStatus, } from './redis';
+import { getDeviceStatuses, setDeviceStatus, } from './config/redis';
 
 export default async function handler(
   req: VercelRequest,
