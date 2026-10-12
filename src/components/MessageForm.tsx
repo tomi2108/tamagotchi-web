@@ -5,6 +5,7 @@ import { Spinner } from "./ui/spinner";
 import { Input } from "@base-ui/react/input";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { api } from "@/api";
 
 type Message = {
   senderId: string;
@@ -13,7 +14,7 @@ type Message = {
 };
 
 async function postMessage(message: Message) {
-  await fetch("/api/message", { method: "POST", body: JSON.stringify(message) });
+  await api.post("/message", message)
 }
 
 function MessageForm() {
