@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 import { env } from "./environment.ts";
 
-
 export const sql = new Pool({
   host: env.DB_HOST,
   port: Number(env.DB_PORT ?? 5432),
