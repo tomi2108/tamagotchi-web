@@ -10,7 +10,7 @@ import { api } from "@/api";
 type Message = {
   senderId: string;
   message: string;
-  topic: string;
+  recipientId: string;
 };
 
 async function postMessage(message: Message) {
@@ -19,7 +19,7 @@ async function postMessage(message: Message) {
 
 
 function MessageForm() {
-  const [topic, setTopic] = useState<"tomi" | "rochi">("tomi");
+  const [recipientId, setRecipientId] = useState<"tomi" | "rochi">("tomi");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,7 @@ function MessageForm() {
     setLoading(true);
     e.preventDefault();
     //TODO: make screen to select senderId
-    await postMessage({ senderId: "tomi", message, topic });
+    await postMessage({ senderId: "tomi", message, recipientId });
     clearForm();
     setLoading(false);
   };
@@ -57,8 +57,8 @@ function MessageForm() {
           <div className="mt-6">
             <RadioGroup
               disabled={loading}
-              value={topic}
-              onValueChange={setTopic}
+              value={recipientId}
+              onValueChange={setRecipientId}
               className="flex flex-row gap-6"
             >
               <div className="flex items-center gap-2">
