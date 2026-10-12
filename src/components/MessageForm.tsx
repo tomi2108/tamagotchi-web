@@ -17,6 +17,7 @@ async function postMessage(message: Message) {
   await api.post("/message", message)
 }
 
+
 function MessageForm() {
   const [topic, setTopic] = useState<"tomi" | "rochi">("tomi");
   const [message, setMessage] = useState("");
