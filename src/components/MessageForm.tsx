@@ -5,7 +5,7 @@ import { Spinner } from "./ui/spinner";
 import { Input } from "@base-ui/react/input";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { api } from "@/api";
+import { api } from "@/api/api";
 
 type Message = {
   senderId: string;
@@ -16,7 +16,6 @@ type Message = {
 async function postMessage(message: Message) {
   await api.post("/message", message)
 }
-
 
 function MessageForm() {
   const [recipientId, setRecipientId] = useState<"tomi" | "rochi">("tomi");
