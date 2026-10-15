@@ -3,6 +3,10 @@ import Toolbar from "./components/Toolbar";
 import PetPage from "./pages/PetPage";
 import InventoryPage from "./pages/InventoryPage";
 import ShopPage from "./pages/ShopPage";
+import CemeteryPage from "./pages/CemeteryPage";
+import GardenPage from "./pages/GardenPage";
+import MissionsPage from "./pages/MissionsPage";
+import GamesPage from "./pages/GamePage";
 
 export default function App() {
   return (
@@ -14,6 +18,10 @@ export default function App() {
             <Route path="/" element={<PetPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/cemetery" element={<CemeteryPage />} />
+            <Route path="/garden" element={<GardenPage />} />
+            <Route path="/missions" element={<MissionsPage />} />
+            <Route path="/games" element={<GamesPage />} />
           </Routes>
         </main>
       </div>
