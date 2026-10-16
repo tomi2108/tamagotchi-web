@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { getGarden, harvestPlant, plantSeed, type GardenPlot } from "@/api/garden";
 import { getInventory, type Item } from "@/api/inventory";
 import { formatRemaining } from "@/lib/format";
+import SeedPickerDialog from "@/components/SeedPickerDialog";
 
 export default function GardenPage() {
   const [plots, setPlots] = useState<GardenPlot[]>([]);
   const [seeds, setSeeds] = useState<Item[]>([]);
-  const [selectedSeeds, setSelectedSeeds] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyPlot, setBusyPlot] = useState<number | null>(null);
+  const [plantingPlot, setPlantingPlot] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   const refresh = useCallback(async () => {
     const [garden, inventory] = await Promise.all([getGarden(), getInventory()]);
+
     setPlots(garden);
     setSeeds(inventory.filter((item) => item.type === "seed"));
   }, []);
@@ -32,16 +34,17 @@ export default function GardenPage() {
     return () => clearInterval(interval);
   }, []);
 
-  async function handlePlant(plotNumber: number) {
-    const seedCode = selectedSeeds[plotNumber];
+  async function handlePlant(seedCode: string) {
+    if (plantingPlot === null) return;
 
-    if (!seedCode) return;
+    const plotNumber = plantingPlot;
 
     setBusyPlot(plotNumber);
     setError(null);
 
     try {
       await plantSeed(plotNumber, seedCode);
+      setPlantingPlot(null);
       await refresh();
     } catch {
       setError("No se pudo plantar. Revisá la parcela y tu inventario.");
@@ -113,10 +116,12 @@ export default function GardenPage() {
               <Card key={plot.plot_number} className={occupied ? "" : "border-dashed"}>
                 <CardContent className="flex min-h-52 flex-col items-center gap-3 p-4 text-center">
                   <div
-                    className={`flex size-12 items-center justify-center rounded-xl ${occupied ? "bg-primary/10" : "bg-amber-900/10"
-                      }`}
+                    className={`flex size - 12 items - center justify - center rounded - xl ${occupied ? "bg-primary/10" : "bg-amber-900/10"
+                      } `}
                   >
-                    <Sprout className={`size-6 ${occupied ? "text-primary" : "text-amber-800"}`} />
+                    <Sprout
+                      className={`size - 6 ${occupied ? "text-primary" : "text-amber-800"} `}
+                    />
                   </div>
 
                   <span className="text-sm font-medium">Parcela {plot.plot_number}</span>
@@ -145,39 +150,21 @@ export default function GardenPage() {
                   ) : (
                     <>
                       <span className="text-xs text-muted-foreground">Parcela vacía</span>
-                      {seeds.length === 0 && (
+
+                      {seeds.length === 0 ? (
                         <p className="text-xs text-muted-foreground">
                           No tenés semillas disponibles.
                         </p>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setPlantingPlot(plot.plot_number)}
+                        >
+                          <Sprout />
+                          Elegir semilla
+                        </Button>
                       )}
-                      <select
-                        aria-label={`Semilla para parcela ${plot.plot_number}`}
-                        className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-                        value={selectedSeeds[plot.plot_number] ?? ""}
-                        onChange={(event) =>
-                          setSelectedSeeds((current) => ({
-                            ...current,
-                            [plot.plot_number]: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">Elegir semilla</option>
-                        {seeds.map((seed) => (
-                          <option key={seed.id} value={seed.code}>
-                            {seed.name} × {seed.quantity}
-                          </option>
-                        ))}
-                      </select>
-
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        disabled={busy || !selectedSeeds[plot.plot_number] || seeds.length === 0}
-                        onClick={() => handlePlant(plot.plot_number)}
-                      >
-                        {busy ? <LoaderCircle className="animate-spin" /> : <Sprout />}
-                        Plantar
-                      </Button>
                     </>
                   )}
                 </CardContent>
@@ -186,6 +173,17 @@ export default function GardenPage() {
           })}
         </div>
       </section>
+
+      <SeedPickerDialog
+        open={plantingPlot !== null}
+        plotNumber={plantingPlot}
+        seeds={seeds}
+        busy={busyPlot !== null}
+        onOpenChange={(open) => {
+          if (!open && busyPlot === null) setPlantingPlot(null);
+        }}
+        onConfirm={handlePlant}
+      />
     </div>
   );
 }
