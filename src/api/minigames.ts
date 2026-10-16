@@ -15,8 +15,8 @@ export type MinigameScore = {
 };
 
 export type LeaderboardEntry = {
-  playerId: number;
-  playerName: string;
+  player_id: number;
+  player_name: string;
   score: number;
   createdAt: string;
 };
