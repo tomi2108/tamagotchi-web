@@ -6,6 +6,7 @@ import {
   Gamepad2,
   Heart,
   Menu,
+  MessageCircle,
   Package,
   ShoppingBag,
   Sprout,
@@ -20,6 +21,7 @@ const links = [
   { label: "Huerta", to: "/garden", icon: Sprout },
   { label: "Misiones diarias", to: "/missions", icon: ClipboardList },
   { label: "Juegos", to: "/games", icon: Gamepad2 },
+  { label: "Mensajes", to: "/messages", icon: MessageCircle },
 ];
 
 export default function AppToolbar() {
