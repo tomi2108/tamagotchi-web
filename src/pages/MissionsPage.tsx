@@ -1,29 +1,49 @@
-import { CheckCircle2, Coins, ListChecks, Target } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, Coins, ListChecks, LoaderCircle, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const missions = [
-  {
-    id: 1,
-    title: "Revisar a tu mascota",
-    description: "Pasá a ver cómo está tu pequeño compañero.",
-    reward: 5,
-  },
-  {
-    id: 2,
-    title: "Compartir un momento",
-    description: "Dediquen un ratito a estar juntos.",
-    reward: 10,
-  },
-  {
-    id: 3,
-    title: "Mantener todo en orden",
-    description: "Revisá el inventario y prepará lo que necesite.",
-    reward: 5,
-  },
-];
+import { completeMission as claimMission, getDailyMissions, type Mission } from "@/api/missions";
 
 export default function MissionsPage() {
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>();
+  const [claiming, setClaiming] = useState<number>();
+
+  const loadMissions = useCallback(async () => {
+    try {
+      setError(undefined);
+      setMissions(await getDailyMissions());
+    } catch {
+      setError("No se pudieron cargar las misiones. Intentá de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadMissions();
+  }, [loadMissions]);
+
+  async function handleComplete(missionId: number) {
+    try {
+      setClaiming(missionId);
+      setError(undefined);
+
+      await claimMission(missionId);
+      await loadMissions();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "No se pudo completar la misión.");
+    } finally {
+      setClaiming(undefined);
+    }
+  }
+
+  const completedCount = missions.filter((mission) => mission.completed_at !== null).length;
+
+  const totalReward = missions.reduce((total, mission) => total + mission.reward_coins, 0);
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
@@ -38,47 +58,119 @@ export default function MissionsPage() {
           <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <Target className="size-6 text-primary" />
           </div>
+
           <div className="min-w-0 flex-1">
             <p className="font-pixel text-sm">Las misiones de hoy</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Completá objetivos para ganar monedas.
+              Ganá monedas completando objetivos.
             </p>
           </div>
-          <Badge variant="secondary">0 / {missions.length}</Badge>
+
+          <Badge variant="secondary">
+            {completedCount} / {missions.length}
+          </Badge>
         </CardContent>
       </Card>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 p-3 text-sm text-destructive"
+        >
+          <p>{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadMissions()}
+            disabled={loading}
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
 
       <section className="space-y-3">
         <h2 className="font-pixel text-sm">Objetivos</h2>
 
-        {missions.map((mission) => (
-          <Card key={mission.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start gap-3">
-                <ListChecks className="mt-1 size-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1 space-y-1">
-                  <CardTitle className="text-base">{mission.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{mission.description}</p>
-                </div>
-                <span className="flex shrink-0 items-center gap-1 text-sm">
-                  <Coins className="size-4 text-amber-500" />
-                  {mission.reward}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <CheckCircle2 className="size-4" />
-                Disponible próximamente
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <LoaderCircle className="size-4 animate-spin" />
+            Cargando misiones...
+          </div>
+        ) : missions.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              No hay misiones disponibles hoy.
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          missions.map((mission) => {
+            const completed = mission.completed_at !== null;
+            const canClaim = mission.type === "manual" && !completed;
+            const progress = Math.min(mission.progress, mission.target);
+
+            return (
+              <Card key={mission.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    {completed ? (
+                      <CheckCircle2 className="mt-1 size-5 shrink-0 text-primary" />
+                    ) : (
+                      <ListChecks className="mt-1 size-5 shrink-0 text-muted-foreground" />
+                    )}
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <CardTitle className="text-base">{mission.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{mission.description}</p>
+                    </div>
+
+                    <span className="flex shrink-0 items-center gap-1 text-sm">
+                      <Coins className="size-4 text-amber-500" />
+                      {mission.reward_coins}
+                    </span>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="flex items-center justify-between gap-3 pt-0">
+                  <div className="text-xs text-muted-foreground">
+                    {completed ? (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="size-4" />
+                        Completada
+                      </span>
+                    ) : (
+                      `Progreso: ${progress} / ${mission.target}`
+                    )}
+                  </div>
+
+                  {canClaim && (
+                    <Button
+                      size="sm"
+                      onClick={() => void handleComplete(mission.id)}
+                      disabled={claiming !== undefined}
+                    >
+                      {claiming === mission.id ? (
+                        <>
+                          <LoaderCircle className="size-4 animate-spin" />
+                          Reclamando...
+                        </>
+                      ) : (
+                        "Completar"
+                      )}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </section>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Las misiones y sus recompensas todavía son de ejemplo.
-      </p>
+      {!loading && missions.length > 0 && (
+        <p className="text-center text-xs text-muted-foreground">
+          Recompensas disponibles hoy: {totalReward} monedas.
+        </p>
+      )}
     </div>
   );
 }
