@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Gamepad2, RefreshCw, UserRound } from "lucide-react";
 import { getPlayers, type Player } from "@/api/players";
-import { usePlayer } from "@/context/PlayerContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePlayer } from "./PlayerContext";
 
 export default function PlayerGate({ children }: { children: React.ReactNode }) {
   const { player, selectPlayer } = usePlayer();

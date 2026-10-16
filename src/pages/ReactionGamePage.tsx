@@ -1,4 +1,4 @@
-import MinigamePage from "./MinigamePage";
+import MinigamePage from "./MiniGamePage";
 
 export default function ReactionGamePage() {
   return (

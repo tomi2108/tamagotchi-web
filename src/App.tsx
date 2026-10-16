@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Toolbar from "./components/Toolbar";
 import PlayerGate from "./components/PlayerGate";
-import { PlayerProvider } from "./context/PlayerContext";
 import PetPage from "./pages/PetPage";
 import InventoryPage from "./pages/InventoryPage";
 import ShopPage from "./pages/ShopPage";
@@ -13,6 +12,7 @@ import MessagesPage from "./pages/MessagePage";
 import MemoryGamePage from "./pages/MemoryGamePage";
 import ReactionGamePage from "./pages/ReactionGamePage";
 import DodgeGamePage from "./pages/DodgeGamePage";
+import { PlayerProvider } from "./components/PlayerContext";
 
 export default function App() {
   return (
