@@ -1,9 +1,9 @@
 import { api } from ".";
 
 type Message = {
-  senderId: string;
+  senderId: number;
   content: string;
-  recipientId: string;
+  recipientId: number;
 };
 
 export async function postMessage(message: Message) {

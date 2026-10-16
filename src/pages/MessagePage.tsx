@@ -1,34 +1,79 @@
-import { useState, type FormEvent } from "react";
-import { Heart, Send } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Heart, Send, CheckCircle2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { postMessage } from "@/api/messages";
 import { Textarea } from "@/components/ui/textarea";
-
-type UserId = "tomi" | "rochi";
+import { getPlayers, type Player } from "@/api/players";
+import { postMessage } from "@/api/messages";
+import { usePlayer } from "@/components/PlayerContext";
 
 export default function MessagesPage() {
-  const [senderId, setSenderId] = useState<UserId>("tomi");
-  const [recipientId, setRecipientId] = useState<UserId>("rochi");
+  const { player } = usePlayer();
+
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [recipientId, setRecipientId] = useState<string>("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getPlayers()
+      .then((data) => {
+        if (cancelled) return;
+
+        setPlayers(data);
+
+        const recipient = data.find((item) => item.id !== player?.id);
+        if (recipient) setRecipientId(String(recipient.id));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("No se pudieron cargar los jugadores.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPlayers(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [player?.id]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const message = content.trim();
-    if (!message || loading) return;
+    const selectedRecipientId = Number(recipientId);
+
+    if (
+      !message ||
+      loading ||
+      !player ||
+      !Number.isSafeInteger(selectedRecipientId) ||
+      selectedRecipientId <= 0 ||
+      selectedRecipientId === player.id
+    ) {
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setSent(false);
 
     try {
-      await postMessage({ senderId, content: message, recipientId });
+      await postMessage({
+        senderId: player.id,
+        content: message,
+        recipientId: selectedRecipientId,
+      });
+
       setContent("");
       setSent(true);
     } catch {
@@ -37,6 +82,8 @@ export default function MessagesPage() {
       setLoading(false);
     }
   }
+
+  const recipients = players.filter((item) => item.id !== player?.id);
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -58,51 +105,44 @@ export default function MessagesPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <fieldset disabled={loading} className="space-y-3">
+            <div className="space-y-3">
               <Label>Enviar desde</Label>
-              <RadioGroup
-                value={senderId}
-                onValueChange={(value) => setSenderId(value as UserId)}
-                className="grid grid-cols-2 gap-3"
-              >
-                {(["tomi", "rochi"] as const).map((user) => (
-                  <Label
-                    key={user}
-                    htmlFor={`sender-${user}`}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${senderId === user ? "border-primary bg-primary/5" : "border-border"
-                      }`}
-                  >
-                    <RadioGroupItem value={user} id={`sender-${user}`} />
-                    <span>{user === "tomi" ? "Tomi" : "Rochi"}</span>
-                  </Label>
-                ))}
-              </RadioGroup>
-            </fieldset>
+              <div className="flex items-center gap-3 rounded-lg border border-primary bg-primary/5 p-4">
+                <UserRound className="size-5 text-primary" />
+                <span>{player?.name ?? "Jugador no seleccionado"}</span>
+              </div>
+            </div>
 
-            <fieldset disabled={loading} className="space-y-3">
+            <fieldset
+              disabled={loading || loadingPlayers || recipients.length === 0}
+              className="space-y-3"
+            >
               <Label>Enviar a</Label>
+
               <RadioGroup
                 value={recipientId}
-                onValueChange={(value) => setRecipientId(value as UserId)}
+                onValueChange={setRecipientId}
                 className="grid grid-cols-2 gap-3"
               >
-                {(["tomi", "rochi"] as const).map((user) => (
+                {recipients.map((recipient) => (
                   <Label
-                    key={user}
-                    htmlFor={`recipient-${user}`}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${recipientId === user ? "border-primary bg-primary/5" : "border-border"
+                    key={recipient.id}
+                    htmlFor={`recipient-${recipient.id}`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${recipientId === String(recipient.id)
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
                       }`}
                   >
-                    <RadioGroupItem value={user} id={`recipient-${user}`} />
-                    <span>{user === "tomi" ? "Tomi" : "Rochi"}</span>
+                    <RadioGroupItem value={String(recipient.id)} id={`recipient-${recipient.id}`} />
+                    <span>{recipient.name}</span>
                   </Label>
                 ))}
               </RadioGroup>
             </fieldset>
 
-            {senderId === recipientId && (
+            {!loadingPlayers && recipients.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Estás enviando un mensaje a la misma persona que lo envía.
+                No hay otros jugadores disponibles para recibir mensajes.
               </p>
             )}
 
@@ -132,12 +172,24 @@ export default function MessagesPage() {
             )}
 
             {sent && (
-              <p role="status" className="text-sm text-primary">
-                ¡Mensaje enviado! ❤️
+              <p role="status" className="flex items-center gap-2 text-sm text-primary">
+                <CheckCircle2 className="size-4" />
+                Mensaje enviado.
               </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading || !content.trim()}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                loading ||
+                loadingPlayers ||
+                !player ||
+                !recipientId ||
+                !content.trim() ||
+                recipients.length === 0
+              }
+            >
               {loading ? (
                 "Enviando..."
               ) : (
