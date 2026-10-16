@@ -1,9 +1,10 @@
 import { api } from ".";
 
 export type EquipmentSlot = "head" | "body" | "accessory";
-export type ItemType = "food" | "medicine" | "equippable";
+export type ItemType = "consumable" | "seed" | "equippable";
 
 export type Item = {
+  code: string;
   id: number;
   name: string;
   type: ItemType;

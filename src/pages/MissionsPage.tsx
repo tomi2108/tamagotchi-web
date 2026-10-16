@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Coins, ListChecks, LoaderCircle, Target } from "lucide-react";
+import { CheckCircle2, Coins, ListChecks, LoaderCircle, Target, Clock } from "lucide-react";
+import { completeMission as claimMission, getDailyMissions, type Mission } from "@/api/missions";
+import { formatRemaining } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { completeMission as claimMission, getDailyMissions, type Mission } from "@/api/missions";
 
 type MissionType = "automatic" | "manual";
 
@@ -13,17 +14,33 @@ export default function MissionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [claiming, setClaiming] = useState<number>();
+  const [nextResetAt, setNextResetAt] = useState<string>();
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadMissions = useCallback(async () => {
     try {
       setError(undefined);
-      setMissions(await getDailyMissions());
+
+      const data = await getDailyMissions();
+
+      setMissions(data.missions);
+      setNextResetAt(data.nextResetAt);
     } catch {
       setError("No se pudieron cargar las misiones. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!nextResetAt || now < new Date(nextResetAt).getTime()) return;
+    void loadMissions();
+  }, [now, nextResetAt, loadMissions]);
 
   useEffect(() => {
     void loadMissions();
@@ -49,6 +66,8 @@ export default function MissionsPage() {
   const completedCount = missions.filter((mission) => mission.completed_at !== null).length;
 
   const totalReward = missions.reduce((total, mission) => total + mission.reward_coins, 0);
+
+  const resetRemaining = nextResetAt ? formatRemaining(nextResetAt, now) : null;
 
   function renderMissions(type: MissionType) {
     const items = type === "automatic" ? automaticMissions : manualMissions;
@@ -144,6 +163,12 @@ export default function MissionsPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           Pequeños objetivos para cuidar juntos a nuestra mascota.
         </p>
+        {resetRemaining !== null && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="size-4" />
+            Las misiones se renuevan en {resetRemaining}.
+          </p>
+        )}
       </header>
 
       <Card>

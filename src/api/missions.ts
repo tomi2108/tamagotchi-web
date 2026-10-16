@@ -1,5 +1,10 @@
 import { api } from "./index";
 
+export type DailyMissions = {
+  missions: Mission[];
+  nextResetAt: string;
+};
+
 export type Mission = {
   id: number;
   code: string;
@@ -12,10 +17,10 @@ export type Mission = {
   completed_at: string | null;
 };
 
-export async function getDailyMissions(): Promise<Mission[]> {
-  const { data } = await api.get<Mission[]>("/missions");
+export const getDailyMissions = async () => {
+  const { data } = await api.get<DailyMissions>("/missions");
   return data;
-}
+};
 
 export async function completeMission(
   missionId: number,

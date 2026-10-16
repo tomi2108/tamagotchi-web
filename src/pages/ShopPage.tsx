@@ -5,6 +5,7 @@ import { getWallet, type Wallet } from "@/api/wallet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatRemaining } from "@/lib/format";
 
 const rarityLabels: Record<string, string> = {
   common: "Común",
@@ -39,6 +40,12 @@ export default function ShopPage() {
   const [purchasingId, setPurchasingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadShop = useCallback(async () => {
     setLoading(true);
@@ -107,12 +114,8 @@ export default function ShopPage() {
   if (!shop || !wallet) return null;
 
   const rotationEnd = new Date(shop.endsAt);
-  const rotationLabel = Number.isNaN(rotationEnd.getTime())
-    ? null
-    : rotationEnd.toLocaleString("es-AR", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+  const hasValidRotation = !Number.isNaN(rotationEnd.getTime());
+  const rotationRemaining = hasValidRotation ? formatRemaining(shop.endsAt, now) : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -143,8 +146,10 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {rotationLabel && (
-        <p className="text-sm text-muted-foreground">La tienda se renueva el {rotationLabel}.</p>
+      {rotationRemaining !== null && (
+        <p className="text-sm text-muted-foreground">
+          La tienda se renueva en {rotationRemaining}.
+        </p>
       )}
 
       {error && (
