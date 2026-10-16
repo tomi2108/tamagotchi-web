@@ -13,6 +13,7 @@ import MemoryGamePage from "./pages/MemoryGamePage";
 import ReactionGamePage from "./pages/ReactionGamePage";
 import DodgeGamePage from "./pages/DodgeGamePage";
 import { PlayerProvider } from "./components/PlayerContext";
+import CaregiverPage from "./pages/CareGiverPage";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
                 <Route path="/cemetery" element={<CemeteryPage />} />
                 <Route path="/garden" element={<GardenPage />} />
                 <Route path="/missions" element={<MissionsPage />} />
+                <Route path="/caregiver" element={<CaregiverPage />} />
                 <Route path="/games" element={<GamesPage />} />
                 <Route path="/games/memory" element={<MemoryGamePage />} />
                 <Route path="/games/reaction" element={<ReactionGamePage />} />

@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Gamepad2, UserRound } from "lucide-react";
+import { ArrowLeft, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { usePlayer } from "@/components/PlayerContext";
 
 type Props = {
   name: string;
@@ -10,8 +9,6 @@ type Props = {
 };
 
 export default function MinigamePage({ name, description }: Props) {
-  const { player, changePlayer } = usePlayer();
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -20,11 +17,6 @@ export default function MinigamePage({ name, description }: Props) {
             <ArrowLeft className="mr-2 size-4" />
             Sala de juegos
           </Link>
-        </Button>
-
-        <Button variant="ghost" onClick={changePlayer}>
-          <UserRound className="mr-2 size-4" />
-          {player?.name ?? "Cambiar jugador"}
         </Button>
       </div>
 

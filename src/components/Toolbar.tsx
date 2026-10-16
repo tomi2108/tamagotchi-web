@@ -10,8 +10,10 @@ import {
   Package,
   ShoppingBag,
   Sprout,
+  UserRound,
   X,
 } from "lucide-react";
+import { usePlayer } from "./PlayerContext";
 
 const links = [
   { label: "Mascota", to: "/", icon: Heart },
@@ -26,6 +28,7 @@ const links = [
 
 export default function AppToolbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { player } = usePlayer();
 
   const navLinks = (
     <>
@@ -46,12 +49,35 @@ export default function AppToolbar() {
           <span>{label}</span>
         </NavLink>
       ))}
+
+      <div className="my-2 border-t border-border" />
+
+      <NavLink
+        to="/caregiver"
+        onClick={() => setMenuOpen(false)}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-lg border px-3 py-3 transition-colors ${isActive
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          }`
+        }
+      >
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <UserRound size={19} className="text-primary" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground">Cuidador</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {player?.name ?? "Mi perfil"}
+          </p>
+        </div>
+      </NavLink>
     </>
   );
 
   return (
     <>
-      {/* Barra superior en mobile */}
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:hidden">
         <Link to="/" className="font-pixel text-sm text-primary">
           Tamagotchi
@@ -69,7 +95,6 @@ export default function AppToolbar() {
         </button>
       </header>
 
-      {/* Fondo oscuro al abrir el menú */}
       {menuOpen && (
         <button
           type="button"
@@ -79,7 +104,6 @@ export default function AppToolbar() {
         />
       )}
 
-      {/* Menú desplegable en mobile */}
       <nav
         id="mobile-navigation"
         className={`fixed inset-x-0 top-16 z-50 border-b border-border bg-card p-4 shadow-lg transition-all duration-200 md:hidden ${menuOpen ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"
@@ -88,7 +112,6 @@ export default function AppToolbar() {
         <div className="flex flex-col gap-2">{navLinks}</div>
       </nav>
 
-      {/* Barra lateral en escritorio */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
         <Link to="/" className="mb-8 px-3 py-2 font-pixel text-sm leading-relaxed text-primary">
           Tamagotchi
