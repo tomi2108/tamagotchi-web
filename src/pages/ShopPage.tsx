@@ -1,30 +1,49 @@
 import { useCallback, useEffect, useState } from "react";
-import { Coins, RefreshCw, ShoppingBag } from "lucide-react";
+import {
+  Coins,
+  Flower2,
+  Package,
+  RefreshCw,
+  Shirt,
+  ShoppingBag,
+  Utensils,
+} from "lucide-react";
 import { buyItem, getShop, type ShopData, type ShopItem } from "@/api/shop";
 import { getWallet, type Wallet } from "@/api/wallet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatRemaining } from "@/lib/format";
 
-const rarityLabels: Record<string, string> = {
-  common: "Común",
-  uncommon: "Poco común",
-  rare: "Raro",
-  legendary: "Legendario",
-};
+const typeIcons = {
+  equippable: Shirt,
+  seed: Flower2,
+  consumable: Utensils,
+} as const;
 
-const rarityStyles: Record<string, string> = {
-  common: "border-border text-muted-foreground",
-  uncommon: "border-green-700 text-green-600",
-  rare: "border-blue-700 text-blue-500",
-  legendary: "border-yellow-600 text-yellow-500",
-};
-
-const typeLabels: Record<string, string> = {
-  food: "Comida",
-  medicine: "Medicina",
-  equippable: "Equipamiento",
+const rarityConfig: Record<
+  string,
+  { label: string; color: string; level: number }
+> = {
+  common: {
+    label: "Común",
+    color: "bg-muted-foreground",
+    level: 1,
+  },
+  uncommon: {
+    label: "Poco común",
+    color: "bg-green-500",
+    level: 2,
+  },
+  rare: {
+    label: "Raro",
+    color: "bg-blue-500",
+    level: 3,
+  },
+  legendary: {
+    label: "Legendario",
+    color: "bg-amber-400",
+    level: 4,
+  },
 };
 
 const slotLabels: Record<string, string> = {
@@ -43,7 +62,7 @@ export default function ShopPage() {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
+    const interval = setInterval(() => setNow(Date.now()));
     return () => clearInterval(interval);
   }, []);
 
@@ -52,7 +71,10 @@ export default function ShopPage() {
     setError(null);
 
     try {
-      const [shopData, walletData] = await Promise.all([getShop(), getWallet()]);
+      const [shopData, walletData] = await Promise.all([
+        getShop(),
+        getWallet(),
+      ]);
 
       setShop(shopData);
       setWallet(walletData);
@@ -84,13 +106,18 @@ export default function ShopPage() {
     try {
       await buyItem(item.id);
 
-      const [shopData, walletData] = await Promise.all([getShop(), getWallet()]);
+      const [shopData, walletData] = await Promise.all([
+        getShop(),
+        getWallet(),
+      ]);
 
       setShop(shopData);
       setWallet(walletData);
       setNotice(`Compraste ${item.stock} unidades de ${item.name}.`);
     } catch {
-      setError(`No se pudo comprar ${item.name}. Verificá tus monedas e intentá nuevamente.`);
+      setError(
+        `No se pudo comprar ${item.name}. Verificá tus monedas e intentá nuevamente.`,
+      );
     } finally {
       setPurchasingId(null);
     }
@@ -115,14 +142,18 @@ export default function ShopPage() {
 
   const rotationEnd = new Date(shop.endsAt);
   const hasValidRotation = !Number.isNaN(rotationEnd.getTime());
-  const rotationRemaining = hasValidRotation ? formatRemaining(shop.endsAt, now) : null;
+  const rotationRemaining = hasValidRotation
+    ? formatRemaining(shop.endsAt, now)
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tienda</h1>
-          <p className="mt-1 text-muted-foreground">Encontrá algo lindo para tu mascota.</p>
+          <p className="mt-1 text-muted-foreground">
+            Encontrá algo lindo para tu mascota.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -131,7 +162,6 @@ export default function ShopPage() {
             <span className="font-semibold tabular-nums">
               {wallet.coins.toLocaleString("es-AR")}
             </span>
-            <span className="text-sm text-muted-foreground">monedas</span>
           </div>
 
           <Button
@@ -169,7 +199,9 @@ export default function ShopPage() {
           <CardContent className="flex min-h-56 flex-col items-center justify-center gap-3 text-center">
             <ShoppingBag className="size-12 text-muted-foreground" />
             <h2 className="text-lg font-semibold">No hay artículos</h2>
-            <p className="text-sm text-muted-foreground">Volvé cuando se renueve la tienda.</p>
+            <p className="text-sm text-muted-foreground">
+              Volvé cuando se renueve la tienda.
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -180,53 +212,84 @@ export default function ShopPage() {
             const canAfford = wallet.coins >= totalPrice;
             const isPurchasing = purchasingId === item.id;
 
-            return (
-              <Card key={item.id} className="flex flex-col">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <CardTitle className="text-base">{item.name}</CardTitle>
+            const TypeIcon =
+              typeIcons[item.type as keyof typeof typeIcons] ?? Package;
 
-                    <Badge variant="outline" className={rarityStyles[item.rarity] ?? ""}>
-                      {rarityLabels[item.rarity] ?? item.rarity}
-                    </Badge>
+            const rarity = rarityConfig[item.rarity] ?? rarityConfig.common;
+
+            return (
+              <Card
+                key={item.id}
+                className="group flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border bg-muted/50 transition-colors group-hover:bg-primary/5">
+                      <TypeIcon
+                        className="size-6 text-foreground/80"
+                        strokeWidth={1.6}
+                        aria-hidden="true"
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <CardTitle className="text-base leading-snug">
+                        {item.name}
+                      </CardTitle>
+
+                      {item.slot && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {slotLabels[item.slot] ?? item.slot}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <span
+                        className="text-xs font-medium tabular-nums text-muted-foreground"
+                        aria-label={`${item.stock} unidades disponibles`}
+                      >
+                        ×{item.stock}
+                      </span>
+
+                      <div
+                        className="flex items-center gap-1"
+                        role="img"
+                        aria-label={`Rareza: ${rarity.label}`}
+                        title={rarity.label}
+                      >
+                        {Array.from({ length: 4 }, (_, index) => (
+                          <span
+                            key={index}
+                            className={`size-1.5 rounded-full ${
+                              index < rarity.level ? rarity.color : "bg-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex flex-1 flex-col gap-4">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">
-                      {typeLabels[item.type] ?? item.type}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {outOfStock ? "Agotado" : `${item.stock} unidades disponibles`}
-                    </span>
-                  </div>
-
-                  {item.slot && (
-                    <p className="text-sm text-muted-foreground">
-                      Espacio: {slotLabels[item.slot] ?? item.slot}
-                    </p>
-                  )}
-
-                  <div className="mt-auto space-y-3 border-t pt-4">
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="text-muted-foreground">Precio por unidad</span>
-                      <span>{item.price.toLocaleString("es-AR")} monedas</span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium">
-                        Precio del lote ({item.stock} unidades)
-                      </span>
-                      <span className="flex items-center gap-1.5 font-semibold">
-                        <Coins className="size-4 text-yellow-500" />
-                        {totalPrice.toLocaleString("es-AR")}
-                      </span>
+                <CardContent className="mt-auto pt-4">
+                  <div className="flex items-center justify-between gap-3 border-t pt-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Coins className="size-4 shrink-0 text-amber-500" />
+                        <span className="text-lg font-bold tabular-nums">
+                          {totalPrice.toLocaleString("es-AR")}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Monedas
+                      </p>
                     </div>
 
                     <Button
-                      className="w-full"
-                      disabled={outOfStock || !canAfford || purchasingId !== null}
+                      size="sm"
+                      disabled={
+                        outOfStock || !canAfford || purchasingId !== null
+                      }
                       onClick={() => void handlePurchase(item)}
                     >
                       {isPurchasing
@@ -234,8 +297,8 @@ export default function ShopPage() {
                         : outOfStock
                           ? "Agotado"
                           : !canAfford
-                            ? "Monedas insuficientes"
-                            : "Comprar lote"}
+                            ? "Sin monedas"
+                            : "Comprar"}
                     </Button>
                   </div>
                 </CardContent>

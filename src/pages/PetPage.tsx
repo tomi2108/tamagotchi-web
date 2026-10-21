@@ -221,9 +221,6 @@ export default function PetPage() {
           <CardContent className="flex h-full flex-col p-6 sm:p-8">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div>
-                <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-                  Estado actual
-                </span>
                 <h2 className="mt-3 text-xl font-bold sm:text-2xl">
                   ¿Cómo está {pet.name}?
                 </h2>

@@ -1,15 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Coins, ListChecks, LoaderCircle, Target, Clock } from "lucide-react";
-import { completeMission as claimMission, getDailyMissions, type Mission } from "@/api/missions";
+import {
+  Check,
+  CheckCircle2,
+  Coins,
+  Clock,
+  ListChecks,
+  LoaderCircle,
+  Target,
+} from "lucide-react";
+import {
+  completeMission as claimMission,
+  getDailyMissions,
+  type Mission,
+} from "@/api/missions";
 import { formatRemaining } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePet } from "@/components/PetContext";
 
 type MissionType = "automatic" | "manual";
 
 export default function MissionsPage() {
+  const { pet } = usePet();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -54,18 +69,31 @@ export default function MissionsPage() {
       await claimMission(missionId);
       await loadMissions();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "No se pudo completar la misión.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo completar la misión.",
+      );
     } finally {
       setClaiming(undefined);
     }
   }
 
-  const automaticMissions = missions.filter((mission) => mission.type === "automatic");
-  const manualMissions = missions.filter((mission) => mission.type === "manual");
+  const automaticMissions = missions.filter(
+    (mission) => mission.type === "automatic",
+  );
+  const manualMissions = missions.filter(
+    (mission) => mission.type === "manual",
+  );
 
-  const completedCount = missions.filter((mission) => mission.completed_at !== null).length;
+  const completedCount = missions.filter(
+    (mission) => mission.completed_at !== null,
+  ).length;
 
-  const totalReward = missions.reduce((total, mission) => total + mission.reward_coins, 0);
+  const totalReward = missions.reduce(
+    (total, mission) => total + mission.reward_coins,
+    0,
+  );
 
   const resetRemaining = nextResetAt ? formatRemaining(nextResetAt, now) : null;
 
@@ -97,39 +125,75 @@ export default function MissionsPage() {
           const completed = mission.completed_at !== null;
           const canClaim = type === "manual" && !completed;
           const progress = Math.min(mission.progress, mission.target);
+          const progressPercent =
+            mission.target > 0 ? (progress / mission.target) * 100 : 0;
 
           return (
-            <Card key={mission.id}>
+            <Card
+              key={mission.id}
+              className={
+                completed
+                  ? "border-primary/25 bg-primary/[0.03]"
+                  : "transition-colors"
+              }
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
-                  {completed ? (
-                    <CheckCircle2 className="mt-1 size-5 shrink-0 text-primary" />
-                  ) : (
-                    <ListChecks className="mt-1 size-5 shrink-0 text-muted-foreground" />
-                  )}
-
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <CardTitle className="text-base">{mission.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{mission.description}</p>
+                  <div
+                    className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                      completed
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {completed ? (
+                      <Check className="size-5" />
+                    ) : (
+                      <ListChecks className="size-5" />
+                    )}
                   </div>
 
-                  <span className="flex shrink-0 items-center gap-1 text-sm">
-                    <Coins className="size-4 text-amber-500" />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <CardTitle className="text-base leading-snug">
+                      {mission.title}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {mission.description.replaceAll(
+                        "tu mascota",
+                        pet?.name ?? "tu mascota",
+                      )}
+                    </p>
+                  </div>
+
+                  <span className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-500/10 px-2 py-1 text-sm font-medium tabular-nums text-amber-600 dark:text-amber-400">
+                    <Coins className="size-4" />
                     {mission.reward_coins}
                   </span>
                 </div>
               </CardHeader>
 
-              <CardContent className="flex items-center justify-between gap-3 pt-0">
-                <div className="text-xs text-muted-foreground">
-                  {completed ? (
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="size-4" />
-                      Completada
+              <CardContent className="flex items-center gap-3 pt-0">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      {completed && (
+                        <CheckCircle2 className="size-3.5 text-primary" />
+                      )}
+                      <span className="sr-only">
+                        {completed ? "Completada" : "Progreso"}
+                      </span>
                     </span>
-                  ) : (
-                    `Progreso: ${progress} / ${mission.target}`
-                  )}
+
+                    <span className="font-medium tabular-nums text-foreground">
+                      {completed ? mission.target : progress}/{mission.target}
+                    </span>
+                  </div>
+
+                  <Progress
+                    value={completed ? 100 : progressPercent}
+                    className="h-2"
+                    aria-label={`Progreso de ${mission.title}`}
+                  />
                 </div>
 
                 {canClaim && (
@@ -137,14 +201,15 @@ export default function MissionsPage() {
                     size="sm"
                     onClick={() => void handleComplete(mission.id)}
                     disabled={claiming !== undefined}
+                    className="shrink-0"
                   >
                     {claiming === mission.id ? (
-                      <>
-                        <LoaderCircle className="size-4 animate-spin" />
-                        Reclamando...
-                      </>
+                      <LoaderCircle className="size-4 animate-spin" />
                     ) : (
-                      "Completar"
+                      <>
+                        <Check className="size-4" />
+                        Reclamar
+                      </>
                     )}
                   </Button>
                 )}
@@ -163,30 +228,42 @@ export default function MissionsPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           Pequeños objetivos para cuidar juntos a nuestra mascota.
         </p>
+
         {resetRemaining !== null && (
           <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="size-4" />
-            Las misiones se renuevan en {resetRemaining}.
+            Se renuevan en {resetRemaining}
           </p>
         )}
       </header>
 
       <Card>
-        <CardContent className="flex items-center gap-4 py-5">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-            <Target className="size-6 text-primary" />
+        <CardContent className="space-y-4 py-5">
+          <div className="flex items-center gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Target className="size-6 text-primary" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="font-pixel text-sm">Las misiones de hoy</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <Coins className="mr-1 inline size-3.5 text-amber-500" />
+                {totalReward} monedas en recompensas
+              </p>
+            </div>
+
+            <Badge variant="secondary" className="shrink-0 tabular-nums">
+              {completedCount}/{missions.length}
+            </Badge>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="font-pixel text-sm">Las misiones de hoy</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Ganá monedas completando objetivos.
-            </p>
-          </div>
-
-          <Badge variant="secondary">
-            {completedCount} / {missions.length}
-          </Badge>
+          <Progress
+            value={
+              missions.length > 0 ? (completedCount / missions.length) * 100 : 0
+            }
+            className="h-2.5"
+            aria-label="Progreso de misiones diarias"
+          />
         </CardContent>
       </Card>
 
@@ -209,30 +286,18 @@ export default function MissionsPage() {
 
       <Tabs defaultValue="automatic" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="automatic">Automáticas ({automaticMissions.length})</TabsTrigger>
-          <TabsTrigger value="manual">Manuales ({manualMissions.length})</TabsTrigger>
+          <TabsTrigger value="automatic">{pet?.name}</TabsTrigger>
+          <TabsTrigger value="manual">Tú</TabsTrigger>
         </TabsList>
 
         <TabsContent value="automatic" className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Se completan automáticamente mientras cuidás a tu mascota.
-          </p>
           {renderMissions("automatic")}
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Completá estos objetivos y reclamá tus monedas.
-          </p>
           {renderMissions("manual")}
         </TabsContent>
       </Tabs>
-
-      {!loading && missions.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground">
-          Recompensas disponibles hoy: {totalReward} monedas.
-        </p>
-      )}
     </div>
   );
 }
