@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   Cat,
   ClipboardList,
@@ -30,6 +30,8 @@ const links = [
   { label: "Perfil", to: "/caregiver", icon: UserRound },
 ];
 
+const primaryLinks = links.slice(0, 4);
+
 const speciesIcons = {
   cat: Cat,
   dog: Dog,
@@ -39,6 +41,29 @@ const speciesIcons = {
 export default function AppToolbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pet, loading } = usePet();
+  const location = useLocation();
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
 
   const SpeciesIcon =
     pet?.species && pet.species in speciesIcons
@@ -68,8 +93,6 @@ export default function AppToolbar() {
 
   const navLinks = (
     <>
-      <div className="my-2 border-b border-border" />
-
       {links.map(({ label, to, icon: Icon }) => (
         <NavLink
           key={to}
@@ -77,13 +100,14 @@ export default function AppToolbar() {
           end={to === "/"}
           onClick={() => setMenuOpen(false)}
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             }`
           }
         >
-          <Icon size={18} />
+          <Icon size={20} strokeWidth={1.75} />
           <span>{label}</span>
         </NavLink>
       ))}
@@ -92,45 +116,104 @@ export default function AppToolbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:hidden">
-        <Link to="/" className="font-pixel text-sm text-primary">
-          Mimitos
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="flex size-10 items-center justify-center rounded-lg hover:bg-accent"
-          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-navigation"
-        >
-          {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
-      </header>
-
-      {menuOpen && (
-        <button
-          type="button"
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setMenuOpen(false)}
-          aria-label="Cerrar menú"
-        />
-      )}
-
+      {/* Mobile floating navigation */}
       <nav
-        id="mobile-navigation"
-        className={`fixed inset-x-0 top-16 z-50 border-b border-border bg-card p-4 shadow-lg transition-all duration-200 md:hidden ${menuOpen ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0"
-          }`}
+        aria-label="Navegación principal"
+        className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 flex items-stretch justify-around rounded-2xl border border-border/80 bg-card/95 p-1.5 shadow-lg shadow-black/10 backdrop-blur-xl md:hidden"
       >
-        <div className="flex flex-col gap-2">
-          {navLinks}
-          <div className="mt-3 border-t border-border pt-3">{companion}</div>
-        </div>
+        {primaryLinks.map(({ label, to, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === "/"}
+            onClick={() => setMenuOpen(false)}
+            aria-label={label}
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors ${
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon size={21} strokeWidth={isActive ? 2.25 : 1.75} />
+                <span className="text-[10px] font-medium leading-none">
+                  {label}
+                </span>
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Abrir todas las opciones"
+          aria-expanded={menuOpen}
+          className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors ${
+            menuOpen
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          }`}
+        >
+          <Menu size={21} strokeWidth={1.75} />
+          <span className="text-[10px] font-medium leading-none">Más</span>
+        </button>
       </nav>
 
+      {/* Full-screen mobile menu */}
+      {menuOpen && (
+        <div
+          id="mobile-navigation"
+          className="fixed inset-0 z-50 overflow-y-auto bg-background md:hidden"
+        >
+          <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
+            <header className="mb-6 flex items-center justify-between">
+              <Link
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                className="font-pixel text-sm text-primary"
+              >
+                Mimitos
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Cerrar menú"
+                className="flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <X size={22} />
+              </button>
+            </header>
+
+            <section className="mb-6">{companion}</section>
+
+            <div className="mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Todas las opciones
+              </h2>
+            </div>
+
+            <nav className="flex flex-col gap-1">{navLinks}</nav>
+
+            <div className="mt-auto pt-8">
+              <p className="text-center text-xs text-muted-foreground">
+                Mimitos · Tu compañero virtual
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
-        <Link to="/" className="mb-8 px-3 py-2 font-pixel text-sm leading-relaxed text-primary">
+        <Link
+          to="/"
+          className="mb-8 px-3 py-2 font-pixel text-sm leading-relaxed text-primary"
+        >
           Mimitos
         </Link>
 

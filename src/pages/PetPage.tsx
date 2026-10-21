@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getSpecies, type PetSpecies } from "@/api/species";
 import { usePet } from "@/components/PetContext";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   { key: "energy", label: "Energía", icon: BatteryCharging },
@@ -33,6 +34,7 @@ const speciesIcons = {
 } as const;
 
 export default function PetPage() {
+  const navigate = useNavigate();
   const { pet, loading, error, loadPet } = usePet();
   const [species, setSpecies] = useState<PetSpecies[]>([]);
   const [speciesError, setSpeciesError] = useState<string | null>(null);
@@ -93,9 +95,7 @@ export default function PetPage() {
       <div className="flex min-h-[70vh] items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold">
-              Todavía no tenés una mascota
-            </h1>
+            <h1 className="text-2xl font-bold">Todavía no tenés una mascota</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Adoptá un compañero para empezar vuestra aventura.
             </p>
@@ -199,12 +199,13 @@ export default function PetPage() {
             <div className="absolute inset-x-0 bottom-0 h-[22%] border-t-4 border-green-700/20 bg-green-700/30" />
             <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-card/90 px-4 py-2 text-sm font-medium shadow-sm">
               <span
-                className={`size - 2 rounded - full ${pet.is_dead
-                  ? "bg-muted-foreground"
-                  : pet.status === "sleeping"
-                    ? "bg-indigo-400"
-                    : "bg-green-500"
-                  } `}
+                className={`size - 2 rounded - full ${
+                  pet.is_dead
+                    ? "bg-muted-foreground"
+                    : pet.status === "sleeping"
+                      ? "bg-indigo-400"
+                      : "bg-green-500"
+                } `}
               />
               {pet.is_dead
                 ? "En el cementerio"
@@ -230,7 +231,7 @@ export default function PetPage() {
               <span className="rounded-2xl bg-primary/10 px-4 py-3 text-lg font-bold tabular-nums text-primary">
                 {Math.round(
                   stats.reduce((sum, stat) => sum + pet[stat.key], 0) /
-                  stats.length,
+                    stats.length,
                 )}
                 %
               </span>
@@ -238,10 +239,7 @@ export default function PetPage() {
 
             <div className="space-y-5">
               {stats.map(({ key, label, icon: Icon }) => {
-                const percentage = Math.max(
-                  0,
-                  Math.min(100, pet[key]),
-                );
+                const percentage = Math.max(0, Math.min(100, pet[key]));
 
                 const quality =
                   percentage >= 75
@@ -274,7 +272,7 @@ export default function PetPage() {
               <Button
                 className="h-16 w-full rounded-2xl text-base font-semibold"
                 onClick={() => {
-                  window.location.href = "/minigames";
+                  navigate("/games");
                 }}
                 disabled={pet.is_dead}
               >
