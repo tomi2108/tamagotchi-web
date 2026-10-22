@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Gamepad2,
+  Hand,
   LockKeyhole,
   Medal,
   RefreshCw,
@@ -22,18 +23,19 @@ const gamePaths: Record<string, string> = {
   memory: "/games/memory",
   reaction: "/games/reaction",
   dodge: "/games/dodge",
+  rps: "/games/rps",
 };
 
 const leaderboardGames = [
   { code: "memory", name: "Memoria", icon: Gamepad2 },
   { code: "reaction", name: "Reflejos", icon: Sparkles },
   { code: "dodge", name: "Esquivar", icon: Medal },
+  { code: "rps", name: "Piedra, papel o tijera", icon: Hand },
 ];
 
 function getRankIcon(position: number) {
   if (position === 1) return Trophy;
-  if (position === 2) return Medal;
-  if (position === 3) return Medal;
+  if (position === 2 || position === 3) return Medal;
   return null;
 }
 
@@ -114,9 +116,7 @@ export default function GamesPage() {
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-pixel text-xl text-primary">
-            Sala de juegos
-          </h1>
+          <h1 className="font-pixel text-xl text-primary">Sala de juegos</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Jugá y superá tus propios récords.
           </p>
@@ -129,9 +129,7 @@ export default function GamesPage() {
           disabled={loading}
           aria-label="Actualizar minijuegos"
         >
-          <RefreshCw
-            className={`size-4 ${loading ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </div>
 
@@ -173,46 +171,45 @@ export default function GamesPage() {
 
         {!error && games.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {games.map((game) => (
-              <Card key={game.id} className="flex flex-col rounded-2xl">
-                <CardHeader>
-                  <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-primary/10">
-                    {(() => {
-                      const Icon = leaderboardGames.find(g => g.code === game.code)?.icon ?? Gamepad2
-                      return <Icon className="size-6 text-primary" />
-                    })()}
-                  </div>
+            {games.map((game) => {
+              const Icon =
+                leaderboardGames.find((item) => item.code === game.code)
+                  ?.icon ?? Gamepad2;
 
-                  <CardTitle className="text-base">
-                    {game.name}
-                  </CardTitle>
+              return (
+                <Card key={game.id} className="flex flex-col rounded-2xl">
+                  <CardHeader>
+                    <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+                      <Icon className="size-6 text-primary" />
+                    </div>
 
-                  <p className="text-sm text-muted-foreground">
-                    {game.description}
-                  </p>
-                </CardHeader>
+                    <CardTitle className="text-base">{game.name}</CardTitle>
 
-                <CardContent className="mt-auto flex items-center justify-between gap-2">
-                  <Badge variant="secondary">
-                    <Sparkles className="mr-1 size-3" />
-                    Monedas
-                  </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      {game.description}
+                    </p>
+                  </CardHeader>
 
-                  {gamePaths[game.code] ? (
-                    <Button variant="outline" size="sm">
-                      <Link to={gamePaths[game.code]}>
-                        Jugar
-                      </Link>
-                    </Button>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <LockKeyhole className="size-3" />
-                      Próximamente
-                    </span>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="mt-auto flex items-center justify-between gap-2">
+                    <Badge variant="secondary">
+                      <Sparkles className="mr-1 size-3" />
+                      Monedas
+                    </Badge>
+
+                    {gamePaths[game.code] ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={gamePaths[game.code]}>Jugar</Link>
+                      </Button>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <LockKeyhole className="size-3" />
+                        Próximamente
+                      </span>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </section>
@@ -225,7 +222,7 @@ export default function GamesPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-muted/50 p-1.5">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/50 p-1.5 sm:grid-cols-4">
           {leaderboardGames.map((game) => {
             const Icon = game.icon;
             const selected = selectedGame === game.code;
@@ -236,10 +233,11 @@ export default function GamesPage() {
                 type="button"
                 onClick={() => setSelectedGame(game.code)}
                 aria-pressed={selected}
-                className={`flex min-w-0 flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-colors sm:flex-row sm:justify-center sm:gap-2 ${selected
-                  ? "bg-background text-primary shadow-sm"
-                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                  }`}
+                className={`flex min-w-0 items-center justify-center gap-2 rounded-xl px-2 py-3 text-center transition-colors ${
+                  selected
+                    ? "bg-background text-primary shadow-sm"
+                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                }`}
               >
                 <Icon className="size-5 shrink-0" />
                 <span className="text-xs font-semibold sm:text-sm">
@@ -253,9 +251,10 @@ export default function GamesPage() {
         <Card className="overflow-hidden rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/60">
             <CardTitle className="text-base">
-              {leaderboardGames.find(
-                (game) => game.code === selectedGame,
-              )?.name}
+              {
+                leaderboardGames.find((game) => game.code === selectedGame)
+                  ?.name
+              }
             </CardTitle>
 
             <Button
@@ -266,8 +265,7 @@ export default function GamesPage() {
               aria-label="Actualizar clasificación"
             >
               <RefreshCw
-                className={`size-4 ${loadingLeaderboard ? "animate-spin" : ""
-                  }`}
+                className={`size-4 ${loadingLeaderboard ? "animate-spin" : ""}`}
               />
             </Button>
           </CardHeader>
@@ -280,7 +278,10 @@ export default function GamesPage() {
             )}
 
             {!loadingLeaderboard && leaderboardError && (
-              <p role="alert" className="py-8 text-center text-sm text-destructive">
+              <p
+                role="alert"
+                className="py-8 text-center text-sm text-destructive"
+              >
                 {leaderboardError}
               </p>
             )}
@@ -290,9 +291,7 @@ export default function GamesPage() {
               leaderboard.length === 0 && (
                 <div className="flex flex-col items-center py-10 text-center">
                   <Trophy className="size-9 text-muted-foreground/50" />
-                  <p className="mt-3 font-medium">
-                    Todavía no hay puntajes
-                  </p>
+                  <p className="mt-3 font-medium">Todavía no hay puntajes</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     ¡Sé el primero en aparecer en la clasificación!
                   </p>
@@ -310,20 +309,20 @@ export default function GamesPage() {
                     return (
                       <div
                         key={`${entry.player_id}-${position}`}
-                        className={`flex items-center gap-3 rounded-xl p-3 sm:gap-4 ${position === 1
-                          ? "bg-amber-500/10"
-                          : "bg-muted/40"
-                          }`}
+                        className={`flex items-center gap-3 rounded-xl p-3 sm:gap-4 ${
+                          position === 1 ? "bg-amber-500/10" : "bg-muted/40"
+                        }`}
                       >
                         <div
-                          className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${position === 1
-                            ? "bg-amber-500/15 text-amber-600"
-                            : position === 2
-                              ? "bg-slate-400/15 text-slate-500"
-                              : position === 3
-                                ? "bg-orange-700/10 text-orange-700 dark:text-orange-400"
-                                : "text-muted-foreground"
-                            }`}
+                          className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                            position === 1
+                              ? "bg-amber-500/15 text-amber-600"
+                              : position === 2
+                                ? "bg-slate-400/15 text-slate-500"
+                                : position === 3
+                                  ? "bg-orange-700/10 text-orange-700 dark:text-orange-400"
+                                  : "text-muted-foreground"
+                          }`}
                         >
                           {RankIcon ? (
                             <RankIcon className="size-5" />

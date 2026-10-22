@@ -1,171 +1,135 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Apple,
-  Backpack,
-  Bandage,
-  Bone,
-  Carrot,
-  Cherry,
-  Clock,
-  Coins,
-  Flower2,
-  Gem,
-  Gift,
-  Heart,
-  Leaf,
+  LayoutGrid,
   Package,
-  Pill,
+  PackageOpen,
   RefreshCw,
-  Shield,
+  Search,
   Shirt,
-  Sparkles,
+  ShoppingBag,
   Sprout,
-  Star,
-  Sword,
   Utensils,
-  Wheat,
   type LucideIcon,
 } from "lucide-react";
 import { getInventory, type Item } from "@/api/inventory";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { getItemVisual, rarityConfig, rarityOrder } from "@/lib/item-icons";
+import { cn } from "@/lib/utils";
 
-const typeLabels: Record<Item["type"], string> = {
-  consumable: "Consumible",
-  seed: "Semilla",
-  equippable: "Equipamiento",
-};
+// Rarity comes from the items catalog. If your API doesn't return it yet,
+// the rarity filter is hidden and every item is treated as common.
+type InventoryItem = Item & { rarity?: string };
 
-function getItemIcon(item: Item): LucideIcon {
-  const value = `${item.code} ${item.name}`.toLowerCase();
+type TypeFilter = "all" | Item["type"];
 
-  if (item.type === "seed") {
-    if (value.includes("strawberry") || value.includes("frutilla")) {
-      return Cherry;
-    }
+const typeFilters: { value: TypeFilter; label: string; icon: LucideIcon }[] = [
+  { value: "all", label: "Todo", icon: LayoutGrid },
+  { value: "consumable", label: "Consumibles", icon: Utensils },
+  { value: "seed", label: "Semillas", icon: Sprout },
+  { value: "equippable", label: "Equipamiento", icon: Shirt },
+];
 
-    if (value.includes("carrot") || value.includes("zanahoria")) {
-      return Carrot;
-    }
+// Lowercase and strip accents so "pocion" finds "Poción".
+function normalize(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+}
 
-    if (value.includes("flower") || value.includes("flor")) {
-      return Flower2;
-    }
+function ItemTile({
+  item,
+  onOpenGarden,
+}: {
+  item: InventoryItem;
+  onOpenGarden: () => void;
+}) {
+  const { icon: Icon, tone } = getItemVisual(item);
+  const rarity = rarityConfig[item.rarity ?? "common"] ?? rarityConfig.common;
+  const isSeed = item.type === "seed";
 
-    if (value.includes("wheat") || value.includes("trigo")) {
-      return Wheat;
-    }
+  const tileClass = cn(
+    "relative flex aspect-square w-full items-center justify-center rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+    rarity.tile,
+    isSeed &&
+      "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
+  );
 
-    if (value.includes("pumpkin") || value.includes("calabaza")) {
-      return Apple;
-    }
+  const content = (
+    <>
+      <Icon
+        className={cn("size-9 sm:size-10", tone)}
+        strokeWidth={1.6}
+        aria-hidden="true"
+      />
 
-    return Sprout;
-  }
+      {isSeed && (
+        <span className="absolute left-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+          <Sprout className="size-3" aria-hidden="true" />
+        </span>
+      )}
 
-  if (item.type === "consumable") {
-    if (value.includes("medicine") || value.includes("medicina") || value.includes("pill")) {
-      return Pill;
-    }
+      <span className="absolute bottom-1.5 right-1.5 rounded-md bg-background/85 px-1.5 text-xs font-semibold tabular-nums shadow-sm">
+        ×{item.quantity}
+      </span>
+    </>
+  );
 
-    if (value.includes("bandage") || value.includes("venda")) {
-      return Bandage;
-    }
+  return (
+    <li className="flex min-w-0 flex-col gap-1.5">
+      {isSeed ? (
+        <button
+          type="button"
+          className={tileClass}
+          title={item.name}
+          aria-label={`${item.name}, ${item.quantity} unidades. Ir a la huerta`}
+          onClick={onOpenGarden}
+        >
+          {content}
+        </button>
+      ) : (
+        <div
+          className={tileClass}
+          title={item.name}
+          role="img"
+          aria-label={`${item.name}, ${item.quantity} unidades`}
+        >
+          {content}
+        </div>
+      )}
 
-    if (value.includes("heart") || value.includes("corazon")) {
-      return Heart;
-    }
-
-    if (value.includes("bone") || value.includes("hueso")) {
-      return Bone;
-    }
-
-    if (
-      value.includes("food") ||
-      value.includes("comida") ||
-      value.includes("fruit") ||
-      value.includes("fruta")
-    ) {
-      return Apple;
-    }
-
-    if (value.includes("carrot") || value.includes("zanahoria")) {
-      return Carrot;
-    }
-
-    if (value.includes("water") || value.includes("agua")) {
-      return Utensils;
-    }
-
-    return Gift;
-  }
-
-  if (value.includes("armor") || value.includes("armadura") || value.includes("shield")) {
-    return Shield;
-  }
-
-  if (value.includes("sword") || value.includes("espada")) {
-    return Sword;
-  }
-
-  if (
-    value.includes("shirt") ||
-    value.includes("camisa") ||
-    value.includes("clothes") ||
-    value.includes("ropa")
-  ) {
-    return Shirt;
-  }
-
-  if (value.includes("gem") || value.includes("gema")) {
-    return Gem;
-  }
-
-  if (value.includes("coin") || value.includes("moneda")) {
-    return Coins;
-  }
-
-  if (value.includes("star") || value.includes("estrella")) {
-    return Star;
-  }
-
-  if (value.includes("clock") || value.includes("reloj")) {
-    return Clock;
-  }
-
-  if (value.includes("backpack") || value.includes("mochila")) {
-    return Backpack;
-  }
-
-  if (value.includes("leaf") || value.includes("hoja")) {
-    return Leaf;
-  }
-
-  if (value.includes("magic") || value.includes("magico")) {
-    return Sparkles;
-  }
-
-  return Package;
+      <span className="line-clamp-2 text-center text-xs leading-tight text-muted-foreground">
+        {item.name}
+      </span>
+    </li>
+  );
 }
 
 export default function InventoryPage() {
   const navigate = useNavigate();
 
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadInventory = useCallback(async () => {
-    setLoading(true);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [rarities, setRarities] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+
+  const loadInventory = useCallback(async (silent = false) => {
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     setError(null);
 
     try {
-      setItems(await getInventory());
+      setItems((await getInventory()) as InventoryItem[]);
     } catch {
       setError("No se pudo cargar el inventario.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -173,89 +137,214 @@ export default function InventoryPage() {
     void loadInventory();
   }, [loadInventory]);
 
-  if (loading) {
-    return <p className="text-muted-foreground">Cargando inventario...</p>;
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      consumable: items.filter((item) => item.type === "consumable").length,
+      seed: items.filter((item) => item.type === "seed").length,
+      equippable: items.filter((item) => item.type === "equippable").length,
+    }),
+    [items],
+  );
+
+  const totalUnits = useMemo(
+    () => items.reduce((total, item) => total + item.quantity, 0),
+    [items],
+  );
+
+  const hasRarity = items.some((item) => item.rarity);
+
+  const visibleItems = useMemo(() => {
+    const search = normalize(query.trim());
+
+    return items
+      .filter((item) => {
+        if (typeFilter !== "all" && item.type !== typeFilter) return false;
+
+        if (
+          rarities.length > 0 &&
+          !rarities.includes(item.rarity ?? "common")
+        ) {
+          return false;
+        }
+
+        return !search || normalize(item.name).includes(search);
+      })
+      .sort((a, b) => {
+        const levelA = rarityConfig[a.rarity ?? "common"]?.level ?? 0;
+        const levelB = rarityConfig[b.rarity ?? "common"]?.level ?? 0;
+
+        return levelB - levelA || a.name.localeCompare(b.name, "es");
+      });
+  }, [items, typeFilter, rarities, query]);
+
+  const hasActiveFilters =
+    typeFilter !== "all" || rarities.length > 0 || query.trim() !== "";
+
+  function resetFilters() {
+    setTypeFilter("all");
+    setRarities([]);
+    setQuery("");
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight">Inventario</h1>
-          <p className="mt-1 text-muted-foreground">Los objetos que juntaste para tu mascota.</p>
+
+          {!loading && !error && items.length > 0 && (
+            <Badge
+              variant="secondary"
+              className="gap-1 tabular-nums"
+              aria-label={`${totalUnits} unidades en total`}
+            >
+              <Package className="size-3.5" aria-hidden="true" />
+              {totalUnits}
+            </Badge>
+          )}
         </div>
 
         <Button
           variant="outline"
           size="icon"
-          onClick={() => void loadInventory()}
+          onClick={() => void loadInventory(true)}
+          disabled={loading || refreshing}
           aria-label="Actualizar inventario"
         >
-          <RefreshCw className="size-4" />
+          <RefreshCw className={cn("size-4", refreshing && "animate-spin")} />
         </Button>
       </div>
 
       {error && (
-        <div className="space-y-3">
-          <p className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" onClick={() => void loadInventory()}>
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 p-3 text-sm text-destructive"
+        >
+          <p>{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadInventory()}
+          >
             Reintentar
           </Button>
         </div>
       )}
 
-      {!error && items.length === 0 && (
-        <Card>
-          <CardContent className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
-            <Package className="size-12 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">Tu inventario está vacío</h2>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Visitá la tienda para conseguir consumibles, semillas y equipamiento para tu mascota.
-            </p>
-          </CardContent>
-        </Card>
+      {loading && (
+        <div
+          className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+          aria-busy="true"
+        >
+          {Array.from({ length: 12 }, (_, index) => (
+            <div
+              key={index}
+              className="aspect-square animate-pulse rounded-2xl border bg-muted/40"
+            />
+          ))}
+        </div>
       )}
 
-      {!error && items.length > 0 && (
+      {!loading && !error && items.length === 0 && (
+        <div className="flex min-h-64 flex-col items-center justify-center gap-4 text-muted-foreground">
+          <PackageOpen className="size-14" aria-hidden="true" />
+          <Button variant="outline" onClick={() => navigate("/shop")}>
+            <ShoppingBag className="size-4" />
+            Tienda
+          </Button>
+        </div>
+      )}
+
+      {!loading && !error && items.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">
-            {items.length} {items.length === 1 ? "artículo" : "artículos"}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-56">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar"
+                aria-label="Buscar objetos"
+                className="pl-8"
+              />
+            </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => {
-              const ItemIcon = getItemIcon(item);
+            {/* Base UI: the value is always an array. Without `multiple`,
+                it holds at most one item. */}
+            <ToggleGroup
+              variant="outline"
+              value={[typeFilter]}
+              onValueChange={(value) => {
+                if (value[0]) setTypeFilter(value[0] as TypeFilter);
+              }}
+              aria-label="Filtrar por tipo"
+            >
+              {typeFilters.map(({ value, label, icon: Icon }) => (
+                <ToggleGroupItem
+                  key={value}
+                  value={value}
+                  aria-label={label}
+                  title={label}
+                  className="gap-1.5 px-3"
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  <span className="text-xs tabular-nums">{counts[value]}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
 
-              return (
-                <Card key={item.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                        <ItemIcon className="size-6 text-primary" strokeWidth={1.75} />
-                      </div>
-
-                      <CardTitle className="text-base">{item.name}</CardTitle>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm text-muted-foreground">{typeLabels[item.type]}</span>
-
-                      <span className="font-medium tabular-nums">×{item.quantity}</span>
-                    </div>
-
-                    {item.type === "seed" && (
-                      <Button className="w-full" onClick={() => navigate("/garden")}>
-                        <Sprout className="size-4" />
-                        Ir a la huerta
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {hasRarity && (
+              <ToggleGroup
+                multiple
+                variant="outline"
+                value={rarities}
+                onValueChange={(value) => setRarities(value)}
+                aria-label="Filtrar por rareza"
+              >
+                {rarityOrder.map((rarity) => (
+                  <ToggleGroupItem
+                    key={rarity}
+                    value={rarity}
+                    aria-label={rarityConfig[rarity].label}
+                    title={rarityConfig[rarity].label}
+                    className="px-3"
+                  >
+                    <span
+                      className={cn(
+                        "size-3 rounded-full",
+                        rarityConfig[rarity].color,
+                      )}
+                    />
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            )}
           </div>
+
+          {visibleItems.length === 0 ? (
+            <div className="flex min-h-48 flex-col items-center justify-center gap-3 text-muted-foreground">
+              <PackageOpen className="size-12" aria-hidden="true" />
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          ) : (
+            <ul className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {visibleItems.map((item) => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  onOpenGarden={() => navigate("/garden")}
+                />
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

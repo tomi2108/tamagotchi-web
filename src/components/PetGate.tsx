@@ -1,10 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Cat, Dog, Heart, Rabbit, RefreshCw, Sprout } from "lucide-react";
-import { getLastDeadPet, adoptPet, type DeadPet } from "@/api/state";
+import { Cat, Dog, Heart, Rabbit, Sprout } from "lucide-react";
+import { adoptPet } from "@/api/state";
 import { getSpecies, type PetSpecies } from "@/api/species";
 import { usePet } from "@/components/PetContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 type Step = "farewell" | "species" | "name";
@@ -42,16 +48,15 @@ export default function PetGate({ children }: { children: ReactNode }) {
   const { pet, loading, error, loadPet, setPetError } = usePet();
 
   const [step, setStep] = useState<Step>("species");
-  const [lastDeadPet, setLastDeadPet] = useState<DeadPet | null>(null);
   const [speciesOptions, setSpeciesOptions] = useState<PetSpecies[]>([]);
   const [species, setSpecies] = useState<PetSpecies["id"] | null>(null);
   const [name, setName] = useState("");
-  const [loadingDeadPet, setLoadingDeadPet] = useState(false);
   const [loadingSpecies, setLoadingSpecies] = useState(true);
   const [adopting, setAdopting] = useState(false);
-  const [deadPetError, setDeadPetError] = useState<string | null>(null);
   const [speciesError, setSpeciesError] = useState<string | null>(null);
-  const [deathCause] = useState(() => deathCauses[Math.floor(Math.random() * deathCauses.length)]);
+  const [deathCause] = useState(
+    () => deathCauses[Math.floor(Math.random() * deathCauses.length)],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +72,9 @@ export default function PetGate({ children }: { children: ReactNode }) {
 
         setSpeciesOptions(result);
         setSpecies((current) =>
-          current && result.some((item) => item.id === current) ? current : null,
+          current && result.some((item) => item.id === current)
+            ? current
+            : null,
         );
       } catch {
         if (!cancelled) {
@@ -86,50 +93,12 @@ export default function PetGate({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loading || !pet?.is_dead) return;
+    if (loading) return;
 
-    let cancelled = false;
-    async function loadLastDeadPet() {
-      setLoadingDeadPet(true);
-      setDeadPetError(null);
-
-      try {
-        const deadPet = await getLastDeadPet();
-
-        if (cancelled) return;
-
-        setLastDeadPet(deadPet);
-        setStep(deadPet ? "farewell" : "species");
-      } catch {
-        if (!cancelled) {
-          setDeadPetError("No pudimos recuperar los recuerdos de tu mascota.");
-        }
-      } finally {
-        if (!cancelled) setLoadingDeadPet(false);
-      }
+    if (pet?.is_dead) {
+      setStep("farewell");
     }
-
-    void loadLastDeadPet();
-
-    return () => {
-      cancelled = true;
-    };
   }, [loading, pet?.is_dead]);
-
-  async function loadLastDeadPetAgain() {
-    setLoadingDeadPet(true);
-    setDeadPetError(null);
-
-    try {
-      const deadPet = await getLastDeadPet();
-      setLastDeadPet(deadPet);
-      setStep(deadPet ? "farewell" : "species");
-    } catch {
-      setDeadPetError("No pudimos recuperar los recuerdos de tu mascota.");
-    } finally {
-      setLoadingDeadPet(false);
-    }
-  }
 
   async function handleAdopt(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -162,7 +131,9 @@ export default function PetGate({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
           <Heart className="size-10 animate-pulse text-primary" />
-          <p className="font-pixel text-xs text-primary">Buscando a tu compañero...</p>
+          <p className="font-pixel text-xs text-primary">
+            Buscando a tu compañero...
+          </p>
         </div>
       </div>
     );
@@ -176,7 +147,7 @@ export default function PetGate({ children }: { children: ReactNode }) {
           {error}
         </p>
         <Button variant="outline" onClick={() => void loadPet()}>
-          <RefreshCw className="mr-2 size-4" />
+          <span className="mr-2">↻</span>
           Intentar de nuevo
         </Button>
       </div>
@@ -185,28 +156,6 @@ export default function PetGate({ children }: { children: ReactNode }) {
 
   if (pet && !pet.is_dead) {
     return <>{children}</>;
-  }
-
-  if (loadingDeadPet) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="font-pixel text-xs text-primary">Recuperando recuerdos...</p>
-      </div>
-    );
-  }
-
-  if (deadPetError) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
-        <p role="alert" className="text-center text-sm text-destructive">
-          {deadPetError}
-        </p>
-        <Button variant="outline" onClick={() => void loadLastDeadPetAgain()}>
-          <RefreshCw className="mr-2 size-4" />
-          Intentar de nuevo
-        </Button>
-      </div>
-    );
   }
 
   const selectedSpecies = speciesOptions.find((item) => item.id === species);
@@ -233,8 +182,8 @@ export default function PetGate({ children }: { children: ReactNode }) {
               </CardTitle>
 
               <CardDescription className="text-sm leading-relaxed">
-                {lastDeadPet
-                  ? `${lastDeadPet.name} fue parte de esta pequeña aventura. Aunque ya no esté, los momentos compartidos quedan en el recuerdo.`
+                {pet
+                  ? `${pet.name} fue parte de esta pequeña aventura. Aunque ya no esté, los momentos compartidos quedan en el recuerdo.`
                   : "Nuestra pequeña aventura tuvo una pausa. Es momento de comenzar una nueva."}
               </CardDescription>
             </CardHeader>
@@ -244,14 +193,18 @@ export default function PetGate({ children }: { children: ReactNode }) {
                 <div>
                   <p className="text-xs text-muted-foreground">Nombre</p>
                   <p className="font-pixel text-sm">
-                    {lastDeadPet?.name ?? "Compañero desconocido"}
+                    {pet?.name ?? "Compañero desconocido"}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground">Fecha de fallecimiento</p>
+                  <p className="text-xs text-muted-foreground">
+                    Fecha de fallecimiento
+                  </p>
                   <p className="text-sm">
-                    {lastDeadPet ? formatDeathDate(lastDeadPet.died_at) : "Fecha desconocida"}
+                    {pet?.dead_at
+                      ? formatDeathDate(pet.dead_at)
+                      : "Fecha desconocida"}
                   </p>
                 </div>
 
@@ -284,7 +237,9 @@ export default function PetGate({ children }: { children: ReactNode }) {
                 Elegí a tu compañero
               </CardTitle>
 
-              <CardDescription>Cada aventura empieza con una nueva amistad.</CardDescription>
+              <CardDescription>
+                Cada aventura empieza con una nueva amistad.
+              </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-3 pb-6">
@@ -305,11 +260,14 @@ export default function PetGate({ children }: { children: ReactNode }) {
                       setSpeciesError(null);
                       void getSpecies()
                         .then(setSpeciesOptions)
-                        .catch(() => setSpeciesError("No se pudieron cargar las especies."))
+                        .catch(() =>
+                          setSpeciesError(
+                            "No se pudieron cargar las especies.",
+                          ),
+                        )
                         .finally(() => setLoadingSpecies(false));
                     }}
                   >
-                    <RefreshCw className="mr-2 size-4" />
                     Intentar de nuevo
                   </Button>
                 </div>
@@ -326,10 +284,11 @@ export default function PetGate({ children }: { children: ReactNode }) {
                       key={option.id}
                       type="button"
                       variant="outline"
-                      className={`group h-auto w-full justify-start gap-4 border-2 py-4 ${species === option.id
+                      className={`group h-auto w-full justify-start gap-4 border-2 py-4 ${
+                        species === option.id
                           ? "border-primary bg-primary/10"
                           : "hover:border-primary hover:bg-primary/5"
-                        }`}
+                      }`}
                       onClick={() => setSpecies(option.id)}
                     >
                       <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
@@ -337,13 +296,17 @@ export default function PetGate({ children }: { children: ReactNode }) {
                       </span>
 
                       <span className="flex min-w-0 flex-1 flex-col items-start gap-1 whitespace-normal text-left">
-                        <span className="font-pixel text-xs">{option.name}</span>
+                        <span className="font-pixel text-xs">
+                          {option.name}
+                        </span>
                         <span className="text-xs font-normal text-muted-foreground">
                           {option.description}
                         </span>
                       </span>
 
-                      {species === option.id && <Heart className="size-4 shrink-0 text-primary" />}
+                      {species === option.id && (
+                        <Heart className="size-4 shrink-0 text-primary" />
+                      )}
                     </Button>
                   );
                 })

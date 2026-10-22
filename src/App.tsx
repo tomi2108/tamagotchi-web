@@ -15,6 +15,7 @@ import DodgeGamePage from "./pages/DodgeGamePage";
 import { PlayerProvider } from "./components/PlayerContext";
 import CaregiverPage from "./pages/CareGiverPage";
 import { PetProvider } from "./components/PetContext";
+import RockPaperScissorsPage from "./pages/RockPaperScissorsPage";
 import PetGate from "./components/PetGate";
 
 export default function App() {
@@ -37,18 +38,16 @@ export default function App() {
                     <Route path="/missions" element={<MissionsPage />} />
                     <Route path="/caregiver" element={<CaregiverPage />} />
                     <Route path="/games" element={<GamesPage />} />
-                    <Route
-                      path="/games/memory"
-                      element={<MemoryGamePage />}
-                    />
+                    <Route path="/games/memory" element={<MemoryGamePage />} />
                     <Route
                       path="/games/reaction"
                       element={<ReactionGamePage />}
                     />
                     <Route
-                      path="/games/dodge"
-                      element={<DodgeGamePage />}
+                      path="/games/rps"
+                      element={<RockPaperScissorsPage />}
                     />
+                    <Route path="/games/dodge" element={<DodgeGamePage />} />
                   </Routes>
                 </main>
               </div>

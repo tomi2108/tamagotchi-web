@@ -1,50 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Coins,
-  Flower2,
-  Package,
-  RefreshCw,
-  Shirt,
-  ShoppingBag,
-  Utensils,
-} from "lucide-react";
+import { Coins, RefreshCw, ShoppingBag } from "lucide-react";
 import { buyItem, getShop, type ShopData, type ShopItem } from "@/api/shop";
 import { getWallet, type Wallet } from "@/api/wallet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatRemaining } from "@/lib/format";
-
-const typeIcons = {
-  equippable: Shirt,
-  seed: Flower2,
-  consumable: Utensils,
-} as const;
-
-const rarityConfig: Record<
-  string,
-  { label: string; color: string; level: number }
-> = {
-  common: {
-    label: "Común",
-    color: "bg-muted-foreground",
-    level: 1,
-  },
-  uncommon: {
-    label: "Poco común",
-    color: "bg-green-500",
-    level: 2,
-  },
-  rare: {
-    label: "Raro",
-    color: "bg-blue-500",
-    level: 3,
-  },
-  legendary: {
-    label: "Legendario",
-    color: "bg-amber-400",
-    level: 4,
-  },
-};
+import { getItemVisual, rarityConfig } from "@/lib/item-icons";
+import { cn } from "@/lib/utils";
 
 const slotLabels: Record<string, string> = {
   head: "Cabeza",
@@ -62,7 +24,7 @@ export default function ShopPage() {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()));
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -212,9 +174,7 @@ export default function ShopPage() {
             const canAfford = wallet.coins >= totalPrice;
             const isPurchasing = purchasingId === item.id;
 
-            const TypeIcon =
-              typeIcons[item.type as keyof typeof typeIcons] ?? Package;
-
+            const { icon: ItemIcon, tone } = getItemVisual(item);
             const rarity = rarityConfig[item.rarity] ?? rarityConfig.common;
 
             return (
@@ -224,9 +184,14 @@ export default function ShopPage() {
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-3">
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border bg-muted/50 transition-colors group-hover:bg-primary/5">
-                      <TypeIcon
-                        className="size-6 text-foreground/80"
+                    <div
+                      className={cn(
+                        "flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-transform group-hover:scale-105",
+                        rarity.tile,
+                      )}
+                    >
+                      <ItemIcon
+                        className={cn("size-6", tone)}
                         strokeWidth={1.6}
                         aria-hidden="true"
                       />
@@ -261,9 +226,10 @@ export default function ShopPage() {
                         {Array.from({ length: 4 }, (_, index) => (
                           <span
                             key={index}
-                            className={`size-1.5 rounded-full ${
-                              index < rarity.level ? rarity.color : "bg-muted"
-                            }`}
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              index < rarity.level ? rarity.color : "bg-muted",
+                            )}
                           />
                         ))}
                       </div>
@@ -280,9 +246,6 @@ export default function ShopPage() {
                           {totalPrice.toLocaleString("es-AR")}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Monedas
-                      </p>
                     </div>
 
                     <Button

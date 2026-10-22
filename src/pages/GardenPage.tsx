@@ -13,6 +13,7 @@ import {
   Wheat,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   getGarden,
   harvestPlant,
@@ -23,7 +24,7 @@ import { getInventory, type Item } from "@/api/inventory";
 import { formatRemaining } from "@/lib/format";
 
 function getSeedIcon(code: string, name: string) {
-  const value = `${code} ${name} `.toLowerCase();
+  const value = `${code} ${name}`.toLowerCase();
 
   if (value.includes("strawberry") || value.includes("frutilla")) {
     return Cherry;
@@ -136,8 +137,7 @@ export default function GardenPage() {
     }
 
     const ready =
-      plot.ready_at !== null &&
-      new Date(plot.ready_at).getTime() <= now;
+      plot.ready_at !== null && new Date(plot.ready_at).getTime() <= now;
 
     if (ready) {
       void handleHarvest(plot.plot_number);
@@ -187,16 +187,20 @@ export default function GardenPage() {
                       setSelectedSeed(selected ? null : seed.code);
                       setError(null);
                     }}
-                    className={`flex w - full items - center gap - 4 rounded - 2xl border p - 3 text - left transition - all duration - 200 sm: p - 4 ${selected
+                    className={cn(
+                      "flex w-full items-center gap-4 rounded-2xl border p-3 text-left transition-all duration-200 sm:p-4",
+                      selected
                         ? "border-primary/60 bg-primary/10 shadow-sm ring-2 ring-primary/15"
-                        : "border-transparent bg-muted/40 hover:border-primary/20 hover:bg-accent/70"
-                      } `}
+                        : "border-transparent bg-muted/40 hover:border-primary/20 hover:bg-accent/70",
+                    )}
                   >
                     <span
-                      className={`flex size - 12 shrink - 0 items - center justify - center rounded - 2xl ${selected
+                      className={cn(
+                        "flex size-12 shrink-0 items-center justify-center rounded-2xl",
+                        selected
                           ? "bg-primary text-primary-foreground"
-                          : "bg-primary/10 text-primary"
-                        } `}
+                          : "bg-primary/10 text-primary",
+                      )}
                     >
                       <Icon className="size-6" />
                     </span>
@@ -220,8 +224,9 @@ export default function GardenPage() {
               })}
 
               {availableSeeds.length === 0 && (
-                <div className="flex flex-col items-center rounded-2xl border border-dashed border-border p-6 text-muted-foreground">
+                <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
                   <Sprout className="size-7 opacity-60" />
+                  <p>No tenés semillas. Comprá algunas en la tienda.</p>
                 </div>
               )}
             </div>
@@ -243,7 +248,7 @@ export default function GardenPage() {
         </Card>
 
         <Card className="overflow-hidden rounded-3xl border-border/70">
-          <CardContent className="relative min-h-[520px] overflow-hidden bg-sky-200 p-0 dark:bg-slate-800 sm:min-h-[680px]">
+          <CardContent className="relative min-h-[520px] overflow-hidden bg-sky-200 p-0 sm:min-h-[680px] dark:bg-slate-800">
             <div className="absolute right-10 top-10 size-20 rounded-full bg-yellow-300 shadow-[0_0_0_12px_rgba(253,224,71,0.18)]" />
 
             <div className="absolute inset-x-0 top-[38%] h-[62%] bg-[#91b27d] dark:bg-emerald-950" />
@@ -257,12 +262,12 @@ export default function GardenPage() {
                   plot.ready_at !== null &&
                   new Date(plot.ready_at).getTime() <= now;
                 const busy = busyPlot === plot.plot_number;
-                const seed = seeds.find(
-                  (item) => item.code === plot.seed_code,
-                );
-                const Icon = seed
-                  ? getSeedIcon(seed.code, seed.name)
-                  : Sprout;
+                // Use the plot's own seed data: the seed may no longer be in
+                // the inventory once the last one has been planted.
+                const Icon =
+                  plot.seed_code !== null
+                    ? getSeedIcon(plot.seed_code, plot.seed_name ?? "")
+                    : Sprout;
 
                 return (
                   <button
@@ -274,15 +279,15 @@ export default function GardenPage() {
                     aria-label={
                       occupied
                         ? ready
-                          ? `Cosechar ${plot.seed_name} `
+                          ? `Cosechar ${plot.seed_name}`
                           : `${plot.seed_name}, creciendo`
                         : selectedSeed
                           ? "Plantar semilla"
-                          : `Parcela vacía ${plot.plot_number} `
+                          : `Parcela vacía ${plot.plot_number}`
                     }
                   >
                     {(occupied || selectedSeed) && (
-                      <span className="z-10 mb-[-12px] flex size-11 items-center justify-center rounded-full border border-white/50 bg-white/90 text-amber-900 shadow-md transition-transform group-hover:scale-110">
+                      <span className="z-10 -mb-3 flex size-11 items-center justify-center rounded-full border border-white/50 bg-white/90 text-amber-900 shadow-md transition-transform group-hover:scale-110">
                         {busy ? (
                           <LoaderCircle className="size-5 animate-spin" />
                         ) : occupied ? (
@@ -294,13 +299,15 @@ export default function GardenPage() {
                     )}
 
                     <span
-                      className={`flex min - h - 24 w - full flex - col items - center justify - center rounded - [2rem] border - [6px] px - 3 py - 5 text - white shadow - [inset_0_ - 7px_0_rgba(0, 0, 0, 0.12)] transition - transform sm: min - h - 28 ${occupied
+                      className={cn(
+                        "flex min-h-24 w-full flex-col items-center justify-center rounded-[2rem] border-[6px] px-3 py-5 text-white shadow-[inset_0_-7px_0_rgba(0,0,0,0.12)] transition-transform sm:min-h-28",
+                        occupied
                           ? "border-[#9d6848] bg-[#a97550]"
-                          : "border-[#b97c51] bg-[#956442]"
-                        } ${!occupied && selectedSeed
-                          ? "group-hover:scale-[1.03] group-hover:brightness-110"
-                          : ""
-                        } `}
+                          : "border-[#b97c51] bg-[#956442]",
+                        !occupied &&
+                          selectedSeed &&
+                          "group-hover:scale-[1.03] group-hover:brightness-110",
+                      )}
                     >
                       {occupied && (
                         <>
