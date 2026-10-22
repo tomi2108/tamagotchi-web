@@ -197,7 +197,7 @@ export default function GamesPage() {
                     </Badge>
 
                     {gamePaths[game.code] ? (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm">
                         <Link to={gamePaths[game.code]}>Jugar</Link>
                       </Button>
                     ) : (
