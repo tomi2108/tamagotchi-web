@@ -376,14 +376,14 @@ export default function SudokuGamePage() {
       ) {
         event.preventDefault();
 
-        setSelectedCell(([row, col]) => {
+        setSelectedCell((par) => {
+          let [row, col] = par ?? [undefined, undefined];
           if (row === undefined || col === undefined) return [0, 0];
 
           if (event.key === "ArrowUp") row = Math.max(0, row - 1);
           if (event.key === "ArrowDown") row = Math.min(SIZE - 1, row + 1);
           if (event.key === "ArrowLeft") col = Math.max(0, col - 1);
           if (event.key === "ArrowRight") col = Math.min(SIZE - 1, col + 1);
-
           return [row, col];
         });
       }
