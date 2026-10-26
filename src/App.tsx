@@ -11,7 +11,7 @@ import GamesPage from "./pages/GamePage";
 import MessagesPage from "./pages/MessagePage";
 import MemoryGamePage from "./pages/MemoryGamePage";
 import ReactionGamePage from "./pages/ReactionGamePage";
-import DodgeGamePage from "./pages/DodgeGamePage";
+import SudokuGamePage from "./pages/SudokuGamePage";
 import { PlayerProvider } from "./components/PlayerContext";
 import CaregiverPage from "./pages/CareGiverPage";
 import { PetProvider } from "./components/PetContext";
@@ -47,7 +47,7 @@ export default function App() {
                       path="/games/rps"
                       element={<RockPaperScissorsPage />}
                     />
-                    <Route path="/games/dodge" element={<DodgeGamePage />} />
+                    <Route path="/games/sudoku" element={<SudokuGamePage />} />
                   </Routes>
                 </main>
               </div>

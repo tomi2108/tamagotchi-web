@@ -22,14 +22,14 @@ import { Badge } from "@/components/ui/badge";
 const gamePaths: Record<string, string> = {
   memory: "/games/memory",
   reaction: "/games/reaction",
-  dodge: "/games/dodge",
+  sudoku: "/games/sudoku",
   rps: "/games/rps",
 };
 
 const leaderboardGames = [
   { code: "memory", name: "Memoria", icon: Gamepad2 },
   { code: "reaction", name: "Reflejos", icon: Sparkles },
-  { code: "dodge", name: "Esquivar", icon: Medal },
+  { code: "sudoku", name: "Esquivar", icon: Medal },
   { code: "rps", name: "Piedra, papel o tijera", icon: Hand },
 ];
 

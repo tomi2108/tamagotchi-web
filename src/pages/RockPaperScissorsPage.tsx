@@ -12,6 +12,7 @@ import { registerMinigameScore } from "@/api/minigames";
 import { usePlayer } from "@/components/PlayerContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePet } from "@/components/PetContext";
 
 type Move = "rock" | "paper" | "scissors";
 type RoundResult = "win" | "draw" | "lose";
@@ -19,7 +20,7 @@ type GameState = "ready" | "playing" | "roundComplete" | "finished";
 
 type Round = {
   playerMove: Move;
-  computerMove: Move;
+  petMove: Move;
   result: RoundResult;
 };
 
@@ -36,13 +37,13 @@ const moves: {
   { id: "scissors", label: "Tijera", icon: Scissors, emoji: "✌️" },
 ];
 
-function getRoundResult(playerMove: Move, computerMove: Move): RoundResult {
-  if (playerMove === computerMove) return "draw";
+function getRoundResult(playerMove: Move, petMove: Move): RoundResult {
+  if (playerMove === petMove) return "draw";
 
   const playerWins =
-    (playerMove === "rock" && computerMove === "scissors") ||
-    (playerMove === "paper" && computerMove === "rock") ||
-    (playerMove === "scissors" && computerMove === "paper");
+    (playerMove === "rock" && petMove === "scissors") ||
+    (playerMove === "paper" && petMove === "rock") ||
+    (playerMove === "scissors" && petMove === "paper");
 
   return playerWins ? "win" : "lose";
 }
@@ -71,6 +72,7 @@ function getMoveEmoji(move: Move) {
 
 export default function RockPaperScissorsPage() {
   const { player } = usePlayer();
+  const { pet } = usePet();
 
   const [gameState, setGameState] = useState<GameState>("ready");
   const [rounds, setRounds] = useState<Round[]>([]);
@@ -139,13 +141,10 @@ export default function RockPaperScissorsPage() {
       return;
     }
 
-    const computerMove = moves[Math.floor(Math.random() * moves.length)].id;
-    const result = getRoundResult(playerMove, computerMove);
+    const petMove = moves[Math.floor(Math.random() * moves.length)].id;
+    const result = getRoundResult(playerMove, petMove);
 
-    setRounds((previous) => [
-      ...previous,
-      { playerMove, computerMove, result },
-    ]);
+    setRounds((previous) => [...previous, { playerMove, petMove, result }]);
     setGameState("roundComplete");
   }
 
@@ -170,7 +169,7 @@ export default function RockPaperScissorsPage() {
     wins > losses
       ? "¡Ganaste la partida!"
       : losses > wins
-        ? "La computadora ganó"
+        ? `${pet?.name} ganó`
         : "¡La partida terminó en empate!";
 
   return (
@@ -181,7 +180,7 @@ export default function RockPaperScissorsPage() {
             Piedra, papel o tijera
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Jugá 3 rondas contra la computadora y sumá puntos.
+            Jugá 3 rondas contra {pet?.name} y sumá puntos.
           </p>
         </div>
 
@@ -266,12 +265,12 @@ export default function RockPaperScissorsPage() {
                 </div>
 
                 <div className="space-y-2 rounded-xl border bg-card p-5 text-center">
-                  <p className="text-sm text-muted-foreground">Computadora</p>
+                  <p className="text-sm text-muted-foreground">{pet?.name}</p>
                   <span className="block text-5xl">
-                    {getMoveEmoji(lastRound.computerMove)}
+                    {getMoveEmoji(lastRound.petMove)}
                   </span>
                   <p className="font-semibold">
-                    {getMoveLabel(lastRound.computerMove)}
+                    {getMoveLabel(lastRound.petMove)}
                   </p>
                 </div>
               </div>
@@ -378,7 +377,7 @@ export default function RockPaperScissorsPage() {
                       </p>
                       <p className="text-sm font-medium">
                         {getMoveLabel(round.playerMove)} vs.{" "}
-                        {getMoveLabel(round.computerMove)}
+                        {getMoveLabel(round.petMove)}
                       </p>
                     </div>
 
