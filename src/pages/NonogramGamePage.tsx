@@ -24,69 +24,27 @@ type Puzzle = {
 const PUZZLE_PATTERNS = [
   {
     name: "Corazón",
-    rows: [
-      "011110",
-      "111111",
-      "111111",
-      "011110",
-      "001100",
-      "000000",
-    ],
+    rows: ["011110", "111111", "111111", "011110", "001100", "000000"],
   },
   {
     name: "Carita feliz",
-    rows: [
-      "011110",
-      "100001",
-      "101101",
-      "100001",
-      "010010",
-      "001100",
-    ],
+    rows: ["011110", "100001", "101101", "100001", "010010", "001100"],
   },
   {
     name: "Pez",
-    rows: [
-      "001100",
-      "011110",
-      "111111",
-      "011110",
-      "001100",
-      "000100",
-    ],
+    rows: ["001100", "011110", "111111", "011110", "001100", "000100"],
   },
   {
     name: "Gato",
-    rows: [
-      "101101",
-      "111111",
-      "111111",
-      "011110",
-      "001100",
-      "001100",
-    ],
+    rows: ["101101", "111111", "111111", "011110", "001100", "001100"],
   },
   {
     name: "Flor",
-    rows: [
-      "001100",
-      "001100",
-      "111111",
-      "011110",
-      "001100",
-      "011110",
-    ],
+    rows: ["001100", "001100", "111111", "011110", "001100", "011110"],
   },
   {
     name: "Flecha",
-    rows: [
-      "001100",
-      "011110",
-      "111111",
-      "001100",
-      "001100",
-      "001100",
-    ],
+    rows: ["001100", "011110", "111111", "001100", "001100", "001100"],
   },
 ] as const;
 
@@ -110,13 +68,8 @@ function getClues(line: boolean[]): number[] {
   return clues.length > 0 ? clues : [0];
 }
 
-function createPuzzle(
-  name: string,
-  rows: readonly string[],
-): Puzzle {
-  const solution = rows.map((row) =>
-    [...row].map((cell) => cell === "1"),
-  );
+function createPuzzle(name: string, rows: readonly string[]): Puzzle {
+  const solution = rows.map((row) => [...row].map((cell) => cell === "1"));
 
   return {
     name,
@@ -133,9 +86,7 @@ const PUZZLES: Puzzle[] = PUZZLE_PATTERNS.map(({ name, rows }) =>
 );
 
 function emptyBoard(): Board {
-  return Array.from({ length: SIZE }, () =>
-    Array<Cell>(SIZE).fill(0),
-  );
+  return Array.from({ length: SIZE }, () => Array<Cell>(SIZE).fill(0));
 }
 
 function isSolved(board: Board, solution: Solution): boolean {
@@ -152,23 +103,19 @@ function calculateScore(
   const correctCells = board.reduce(
     (total, row, r) =>
       total +
-      row.filter(
-        (cell, c) => cell !== 0 && (cell === 1) === solution[r][c],
-      ).length,
+      row.filter((cell, c) => cell !== 0 && (cell === 1) === solution[r][c])
+        .length,
     0,
   );
 
   return Math.min(
     1000,
-    correctCells * POINTS_PER_CELL +
-      (mistakes === 0 ? COMPLETION_BONUS : 0),
+    correctCells * POINTS_PER_CELL + (mistakes === 0 ? COMPLETION_BONUS : 0),
   );
 }
 
 function choosePuzzle(previousName: string | null): Puzzle {
-  const available = PUZZLES.filter(
-    (puzzle) => puzzle.name !== previousName,
-  );
+  const available = PUZZLES.filter((puzzle) => puzzle.name !== previousName);
 
   return available[Math.floor(Math.random() * available.length)];
 }
@@ -313,19 +260,16 @@ export default function NonogramGamePage() {
       ) {
         event.preventDefault();
 
-        setSelectedCell(([row, column] = [0, 0]) => {
+        setSelectedCell((par) => {
+          let [row, col] = par ?? [undefined, undefined];
+          if (row === undefined || col === undefined) return [0, 0];
           if (event.key === "ArrowUp") row = Math.max(0, row - 1);
           if (event.key === "ArrowDown") row = Math.min(SIZE - 1, row + 1);
-          if (event.key === "ArrowLeft") column = Math.max(0, column - 1);
-          if (event.key === "ArrowRight")
-            column = Math.min(SIZE - 1, column + 1);
-
-          return [row, column];
+          if (event.key === "ArrowLeft") col = Math.max(0, col - 1);
+          if (event.key === "ArrowRight") col = Math.min(SIZE - 1, col + 1);
+          return [row, col];
         });
-      } else if (
-        (event.key === " " || event.key === "Enter") &&
-        selectedCell
-      ) {
+      } else if ((event.key === " " || event.key === "Enter") && selectedCell) {
         event.preventDefault();
         toggleCell(...selectedCell);
       } else if (event.key.toLowerCase() === "x" && selectedCell) {
@@ -434,9 +378,9 @@ export default function NonogramGamePage() {
               <h2 className="text-xl font-semibold">¡Hora de descubrir!</h2>
               <p className="max-w-sm text-sm text-muted-foreground">
                 Completá la cuadrícula de 6×6. Los números indican cuántas
-                casillas consecutivas debés rellenar en cada fila y columna.
-                Los grupos deben aparecer en el orden indicado y estar
-                separados por al menos una casilla vacía.
+                casillas consecutivas debés rellenar en cada fila y columna. Los
+                grupos deben aparecer en el orden indicado y estar separados por
+                al menos una casilla vacía.
               </p>
               <Button size="lg" onClick={startGame}>
                 ¡Empezar!
@@ -447,8 +391,9 @@ export default function NonogramGamePage() {
               <div className="text-center">
                 <h2 className="text-lg font-semibold">{puzzle.name}</h2>
                 <p className="text-xs text-muted-foreground">
-                  Puzzle {PUZZLES.findIndex((item) => item.name === puzzle.name) + 1} de{" "}
-                  {PUZZLES.length}
+                  Puzzle{" "}
+                  {PUZZLES.findIndex((item) => item.name === puzzle.name) + 1}{" "}
+                  de {PUZZLES.length}
                 </p>
               </div>
 
@@ -489,8 +434,7 @@ export default function NonogramGamePage() {
 
                       {row.map((cell, c) => {
                         const selected =
-                          selectedCell?.[0] === r &&
-                          selectedCell?.[1] === c;
+                          selectedCell?.[0] === r && selectedCell?.[1] === c;
 
                         return (
                           <button
@@ -567,10 +511,7 @@ export default function NonogramGamePage() {
                   Desmarcar
                 </Button>
 
-                <Button
-                  disabled={gameState !== "playing"}
-                  onClick={checkBoard}
-                >
+                <Button disabled={gameState !== "playing"} onClick={checkBoard}>
                   <CheckCircle2 className="mr-2 size-4" />
                   Comprobar
                 </Button>
