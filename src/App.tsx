@@ -11,6 +11,7 @@ import GamesPage from "./pages/GamePage";
 import MessagesPage from "./pages/MessagePage";
 import MemoryGamePage from "./pages/MemoryGamePage";
 import ReactionGamePage from "./pages/ReactionGamePage";
+import NonogramGamePage from "./pages/NonogramGamePage";
 import SudokuGamePage from "./pages/SudokuGamePage";
 import { PlayerProvider } from "./components/PlayerContext";
 import CaregiverPage from "./pages/CareGiverPage";
@@ -39,6 +40,10 @@ export default function App() {
                     <Route path="/caregiver" element={<CaregiverPage />} />
                     <Route path="/games" element={<GamesPage />} />
                     <Route path="/games/memory" element={<MemoryGamePage />} />
+                    <Route
+                      path="/games/nonogram"
+                      element={<NonogramGamePage />}
+                    />
                     <Route
                       path="/games/reaction"
                       element={<ReactionGamePage />}

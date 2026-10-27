@@ -24,13 +24,15 @@ const gamePaths: Record<string, string> = {
   reaction: "/games/reaction",
   sudoku: "/games/sudoku",
   rps: "/games/rps",
+  nonogram: "/games/nonogram",
 };
 
 const leaderboardGames = [
   { code: "memory", name: "Memoria", icon: Gamepad2 },
   { code: "reaction", name: "Reflejos", icon: Sparkles },
-  { code: "sudoku", name: "Esquivar", icon: Medal },
+  { code: "sudoku", name: "Sudoku", icon: Medal },
   { code: "rps", name: "Piedra, papel o tijera", icon: Hand },
+  { code: "nonogram", name: "Nonograma 6×6", icon: Gamepad2 },
 ];
 
 function getRankIcon(position: number) {
